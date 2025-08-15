@@ -1,0 +1,147 @@
+* {
+    padding: 0;
+    box-sizing: border-box;
+}
+body, html {
+    height: 100%;
+    width: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #fcfcfc, #ffffff);
+}
+
+.header-bar {
+    background-color: #156504; 
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px 18px 30px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    height: 80px;
+    padding: 0 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    gap: 20px;
+    z-index: 1000;
+}
+.header-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.logo {
+    width: 90px;
+    height: auto;
+}
+
+.university-name h2 {
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.university-name p {
+    font-size: 0.8rem;
+    font-style: italic;
+    margin: 0;
+    color: #c62828; /* DKUT red for slogan */
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px);
+    box-sizing: border-box;
+    padding-top: 80px; 
+    flex: 1;
+}
+
+.login-box {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(21, 101, 4, 0.08);
+    max-width: 350px;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.login-box h2 {
+    margin-bottom: 22px;
+    color: #176600;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.login-box form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #b6d7b6;
+    border-radius: 7px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.login-box input:focus {
+    border-color: #176600;
+    outline: none;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    background-color: #176600;
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.login-box button:hover {
+    background-color: #104803;
+}
+
+.forgot-password {
+    margin-top: 14px;
+    color: #176600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.forgot-password:hover {
+    color: #c62828;
+}
+/* Responsive adjustments */
+@media (max-width: 700px) {
+    .header-bar {
+        align-items: flex-start;
+        padding: 12px 10px;
+        min-height: unset;
+    }
+    .logo {
+        width: 60px;
+        margin-bottom: 8px;
+    }
+    .header-bar-nav {
+        gap: 16px;
+        margin-top: 8px;
+    }
+}
