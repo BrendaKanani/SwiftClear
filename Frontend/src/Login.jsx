@@ -29,19 +29,31 @@ function Login() {
                 <div className="login-box">
                     <h2>Student Login</h2>
                     <form onSubmit={handleSubmit}>
+                        <div className="input-box">
                         <input
                             type="text"
                             placeholder="Registration Number or Email"
                             required
                         />
+                        </div>
+                        <div className="input-box">
                         <input
                             type="password"
                             placeholder="Password"
                             required
                         />
+                        </div>
+                        <div className="remeber-row">
+                            <label>
+                                <input type="checkbox"/>
+                                Remember me
+                            </label>
+                        </div>
+                        <div className="forgot-password">
+                            <a href="#">Forgot Password</a>
+                        </div>
                         <button type="submit">Login</button>
                     </form>
-                    <p className="forgot-password">Forgot Password</p>
                 </div>
             </div>
         </>
