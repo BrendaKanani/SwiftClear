@@ -13,6 +13,8 @@ function RequestClearance() {
 
   const [nationalId, setNationalId] = useState(null);
   const [birthCert, setBirthCert] = useState(null);
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const [previewFile, setPreviewFile] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem("studentName");
@@ -23,11 +25,10 @@ function RequestClearance() {
     e.preventDefault();
 
     if (!nationalId || !birthCert) {
-      alert("Please upload both National ID and Birth Certificate.");
+      setMessage({ text: "Please upload both National ID and Birth Certificate.", type: "error" });
       return;
     }
 
-    // Save file names in localStorage (temporary, until backend integration)
     localStorage.setItem(
       "clearanceDocs",
       JSON.stringify({
@@ -36,8 +37,18 @@ function RequestClearance() {
       })
     );
 
-    // Navigate to clearance process page
-    navigate("/clearance-process");
+    setMessage({ text: "Documents uploaded successfully!", type: "success" });
+
+    // Navigate after short delay
+    setTimeout(() => navigate("/clearance-process"), 2000);
+  };
+
+  const openPreview = (file) => {
+    setPreviewFile(file);
+  };
+
+  const closePreview = () => {
+    setPreviewFile(null);
   };
 
   return (
@@ -66,8 +77,13 @@ function RequestClearance() {
         <h1 className="greeting-text">
           {greetings}, {studentName}
         </h1>
-        <h1>Welcome,</h1>
         <p>Please upload the required documents to begin your clearance process.</p>
+
+        {message.text && (
+          <div className={`notification ${message.type}`}>
+            {message.text}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="clearance-form">
           <div className="form-group">
@@ -78,6 +94,11 @@ function RequestClearance() {
               onChange={(e) => setNationalId(e.target.files[0])}
               required
             />
+            {nationalId && (
+              <span className="file-link" onClick={() => openPreview(nationalId)}>
+                📄 {nationalId.name}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -88,6 +109,11 @@ function RequestClearance() {
               onChange={(e) => setBirthCert(e.target.files[0])}
               required
             />
+            {birthCert && (
+              <span className="file-link" onClick={() => openPreview(birthCert)}>
+                📄 {birthCert.name}
+              </span>
+            )}
           </div>
 
           <button type="submit" className="request-btn">
@@ -95,6 +121,29 @@ function RequestClearance() {
           </button>
         </form>
       </main>
+
+      {/* ✅ Modal Preview */}
+      {previewFile && (
+        <div className="modal-overlay" onClick={closePreview}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal" onClick={closePreview}>✖</button>
+            <h3>{previewFile.name}</h3>
+            {previewFile.type.includes("image") ? (
+              <img
+                src={URL.createObjectURL(previewFile)}
+                alt="Preview"
+                className="preview-image"
+              />
+            ) : (
+              <iframe
+                src={URL.createObjectURL(previewFile)}
+                title="PDF Preview"
+                className="preview-pdf"
+              ></iframe>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Login.css"; // reuse existing login styles
+import "./StaffLogin.css"; // reuse existing login styles
 import logo from "./assets/DeKUT-Online-Clearance-Portal.png";
 
 function StaffLogin() {
@@ -68,8 +68,10 @@ function StaffLogin() {
                 <option value="Admin">Admin</option>
                 <option value="Finance">Finance</option>
                 <option value="Library">Library</option>
-                <option value="Hostel">Hostel</option>
-                <option value="Dean">Dean</option>
+                <option value="Registrar">Registrar</option>
+                <option value="Exams">Exams</option>
+                <option value="DepartmentalOffice">Departmental Office</option>
+                <option value="SportsWelfare">Sports & Welfare</option>
               </select>
             </div>
             <button type="submit">Login</button>

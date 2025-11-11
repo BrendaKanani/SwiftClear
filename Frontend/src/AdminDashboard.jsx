@@ -5,6 +5,7 @@ import logo from "./assets/DeKUT-Online-Clearance-Portal.png";
 
 function AdminDashboard() {
   const [students, setStudents] = useState([]);
+  const [selectedDept, setSelectedDept] = useState("All");
   const navigate = useNavigate();
 
   const adminName = localStorage.getItem("staffName");
@@ -20,11 +21,11 @@ function AdminDashboard() {
   const handleLogout = () => {
     localStorage.removeItem("staffName");
     localStorage.removeItem("deptName");
-    navigate("/staff-login"); // ✅ back to staff login
+    navigate("/staff-login");
   };
 
   useEffect(() => {
-    // Dummy data with remarks
+    // Dummy data
     const dummyData = [
       {
         id: 1,
@@ -32,9 +33,10 @@ function AdminDashboard() {
         regNo: "CIT/001/2021",
         clearance: {
           Finance: { status: "Approved", remarks: "No pending fees" },
-          Library: { status: "Pending", remarks: "" },
-          Hostel: { status: "Approved", remarks: "Room checked" },
-          Dean: { status: "Rejected", remarks: "Disciplinary case pending" },
+          DepartmentalOffice: { status: "Pending", remarks: "" },
+          Library: { status: "Approved", remarks: "Returned all books" },
+          Exams: { status: "Rejected", remarks: "Missing CCS 4102" },
+          SportsWelfare: { status: "Approved", remarks: "Good record" },
         },
       },
       {
@@ -43,14 +45,46 @@ function AdminDashboard() {
         regNo: "CIT/002/2021",
         clearance: {
           Finance: { status: "Pending", remarks: "" },
-          Library: { status: "Approved", remarks: "All books returned" },
-          Hostel: { status: "Pending", remarks: "" },
-          Dean: { status: "Pending", remarks: "" },
+          DepartmentalOffice: { status: "Approved", remarks: "All good" },
+          Library: { status: "Pending", remarks: "" },
+          Exams: { status: "Approved", remarks: "Cleared" },
+          SportsWelfare: { status: "Approved", remarks: "No issues" },
         },
       },
     ];
     setStudents(dummyData);
   }, []);
+
+  const departments = [
+    "All",
+    "Finance",
+    "DepartmentalOffice",
+    "Library",
+    "Exams",
+    "SportsWelfare",
+  ];
+
+  // derive columns to display
+  const visibleCols = selectedDept === "All" ? departments.slice(1) : [selectedDept];
+
+  const renderStatusCell = (student, dept) => {
+    const status = student.clearance?.[dept]?.status ?? "N/A";
+    const remarks = student.clearance?.[dept]?.remarks ?? "";
+
+    const className =
+      status === "Approved" ? "status-approved" : status === "Rejected" ? "status-rejected" : "status-pending";
+
+    return (
+      <td key={dept} className={className}>
+        <strong>{status}</strong>
+        {remarks && (
+          <div className="remarks">
+            <small>{remarks}</small>
+          </div>
+        )}
+      </td>
+    );
+  };
 
   return (
     <>
@@ -74,48 +108,46 @@ function AdminDashboard() {
       </header>
 
       <main className="progress-container">
-        <h2>Admin Dashboard</h2>
+        <h2>Registrar / Admin Dashboard</h2>
+
+        {/* ✅ Department filter menu */}
+        <div className="role-menu">
+          {departments.map((dept) => (
+            <button
+              key={dept}
+              type="button"
+              className={selectedDept === dept ? "active" : ""}
+              onClick={() => setSelectedDept(dept)}
+            >
+              {dept}
+            </button>
+          ))}
+        </div>
+
+        {/* ✅ Scrollable table */}
         {students.length > 0 ? (
-          <table className="progress-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Reg No</th>
-                <th>Finance</th>
-                <th>Library</th>
-                <th>Hostel</th>
-                <th>Dean</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => (
-                <tr key={student.id}>
-                  <td>{student.name}</td>
-                  <td>{student.regNo}</td>
-                  {["Finance", "Library", "Hostel", "Dean"].map((dept) => (
-                    <td
-                      key={dept}
-                      className={
-                        student.clearance[dept].status === "Approved"
-                          ? "status-approved"
-                          : student.clearance[dept].status === "Rejected"
-                          ? "status-rejected"
-                          : "status-pending"
-                      }
-                      title={student.clearance[dept].remarks} // ✅ hover to see remark
-                    >
-                      {student.clearance[dept].status}
-                      {student.clearance[dept].remarks && (
-                        <div className="remarks">
-                          <small>{student.clearance[dept].remarks}</small>
-                        </div>
-                      )}
-                    </td>
+          <div className="table-wrapper">
+            <table className="progress-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Reg No</th>
+                  {visibleCols.map((dept) => (
+                    <th key={dept}>{dept}</th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {students.map((student) => (
+                  <tr key={student.id}>
+                    <td>{student.name}</td>
+                    <td>{student.regNo}</td>
+                    {visibleCols.map((dept) => renderStatusCell(student, dept))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <p>No clearance records available.</p>
         )}

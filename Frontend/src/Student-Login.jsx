@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import './Login.css';
+import './Student-Login.css';
 import logo from './assets/DeKUT-Online-Clearance-Portal.png';
 
 function Login() {
