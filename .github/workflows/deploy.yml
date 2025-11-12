@@ -37,4 +37,5 @@ jobs:
           projectId: "swiftclear-9057a"                          
           channelId: live                                        
         env:
-          FIREBASE_CLI_PREVIEWS: hostingchannels                  
+          FIREBASE_CLI_PREVIEWS: hostingchannels   
+          working-directory: ./Frontend               
