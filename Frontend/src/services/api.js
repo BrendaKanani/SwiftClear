@@ -1,12 +1,17 @@
 // 1. DYNAMIC URL CONFIGURATION
-// If VITE_API_URL is set (in .env or Vercel), use it. Otherwise, default to localhost.
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Priority: 
+// 1. .env file (VITE_API_URL) -> Great for localhost testing
+// 2. Hardcoded Live URL -> Fallback for production
+const LIVE_BACKEND_URL = "https://swiftclear.onrender.com"; 
+const BASE_URL = import.meta.env.VITE_API_URL || LIVE_BACKEND_URL;
 const API_BASE_URL = `${BASE_URL}/api`;
 
-// Export the base URL constant (Useful for file uploads or direct fetch calls)
+// Export the base URL (Useful for components that need it directly)
 export const API_BASE_URL_EXPORT = API_BASE_URL;
 
-// 2. GENERIC REQUEST HELPER (Reduces duplication)
+console.log("🌐 API Connected to:", API_BASE_URL);
+
+// 2. GENERIC REQUEST HELPER
 const request = async (endpoint, method = 'GET', body = null) => {
     const headers = { 'Content-Type': 'application/json' };
     
@@ -26,8 +31,8 @@ const request = async (endpoint, method = 'GET', body = null) => {
         }
         return data;
     } catch (error) {
-        console.error(`Network Error (${endpoint}):`, error);
-        throw error; // Re-throw so components can show the error toast
+        console.error(`❌ Network Error (${endpoint}):`, error);
+        throw error;
     }
 };
 
@@ -40,18 +45,21 @@ export const apiService = {
     // --- CLEARANCE REQUESTS ---
     createClearance: (requestData) => request('/requests', 'POST', requestData),
     getClearanceRequest: (id) => request(`/requests/${id}`),
-    getAllRequests: () => request('/requests'), // For Admin Dashboard
+    getAllRequests: () => request('/requests'),
     
     // --- DEPARTMENT ACTIONS ---
     updateDepartmentStatus: (requestId, departmentData) => 
         request(`/requests/${requestId}/department`, 'PUT', departmentData),
 
     // --- BOOKINGS & PAYMENTS ---
-    // The "Fire and Forget" M-Pesa trigger
     initiateMpesaPayment: (paymentData) => request('/mpesa/pay', 'POST', paymentData),
-    
-    // Standard Booking (Fallback/Simulated)
     createGownBooking: (bookingData) => request('/bookings', 'POST', bookingData),
+    getBookingHistory: (studentId) => request(`/bookings?studentId=${studentId}`), 
+
+    // --- FILE UPLOADS (New) ---
+    // Step 1: Get the Permission Slip (Signed URL) from Backend
+    getUploadUrl: (filename, contentType) => 
+        request('/upload', 'POST', { filename, contentType }),
 
     // --- ADMIN SETTINGS & STAFF ---
     getSystemSettings: () => request('/settings'),
