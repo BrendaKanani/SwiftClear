@@ -1,0 +1,279 @@
+/* src/pages/StudentLogin.css */
+
+/* =========================================
+   1. VARIABLES & RESET
+   ========================================= */
+:root {
+    --dekut-green: #006400;
+    --dekut-gold: #FFD700;
+    --text-main: #1f2937;
+    --text-muted: #64748b;
+    --white: #ffffff;
+    --bg-light: #f0fdf4;
+    --header-height: 80px;
+    --danger-red: #dc2626;
+    --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* =========================================
+   2. LAYOUT & BACKGROUND
+   ========================================= */
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    width: 100vw;
+    background: linear-gradient(135deg, var(--bg-light), #ffffff);
+    
+    /* FIX: Reduced top padding so the card sits more centrally */
+    padding-top: var(--header-height); 
+    padding-bottom: 2rem; /* Add bottom breathing room */
+}
+
+/* =========================================
+   3. HEADER
+   ========================================= */
+.login-header {
+    background-color: var(--dekut-green);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    width: 100%;
+    height: var(--header-height);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.header-logo {
+    height: 55px;
+    width: auto;
+    filter: none;
+    display: block;
+}
+
+.uni-title h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.uni-title p {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--dekut-gold);
+    margin: 2px 0 0 0;
+    font-weight: 500;
+}
+
+/* =========================================
+   4. LOGIN CARD (COMPACT VERSION)
+   ========================================= */
+.login-card {
+    background: var(--white);
+    
+    /* FIX: Tighter padding to make card shorter */
+    padding: 2rem; 
+    
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    width: 100%;
+    max-width: 400px; /* Slightly narrower */
+    border: 1px solid rgba(0,0,0,0.05);
+    animation: slideUp 0.5s ease-out;
+}
+
+.login-card-header {
+    text-align: center;
+    /* FIX: Reduced bottom margin */
+    margin-bottom: 1.5rem; 
+}
+
+.login-card-header h2 {
+    color: var(--dekut-green);
+    margin-bottom: 0.25rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.login-card-header p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* =========================================
+   5. FORMS & INPUTS
+   ========================================= */
+.form-group {
+    /* FIX: Tighter spacing between inputs */
+    margin-bottom: 1rem; 
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+
+.input-field {
+    width: 100%;
+    padding: 10px 14px; /* Slightly smaller padding */
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #f8fafc;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.input-field:focus {
+    border-color: var(--dekut-green);
+    background: var(--white);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 100, 0, 0.1);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.checkbox-container input {
+    accent-color: var(--dekut-green);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.forgot-link {
+    color: var(--dekut-green);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: #004d00;
+    text-decoration: underline;
+}
+
+/* =========================================
+   6. BUTTONS & FEEDBACK
+   ========================================= */
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--dekut-green);
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-btn:hover {
+    background-color: #004d00;
+}
+
+.login-btn:active {
+    transform: scale(0.98);
+}
+
+.login-btn:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.error-msg {
+    color: var(--danger-red);
+    background: #fee2e2;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #fecaca;
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1rem;
+}
+
+/* =========================================
+   7. ANIMATIONS
+   ========================================= */
+.loader {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-bottom-color: var(--white);
+    border-radius: 50%;
+    display: inline-block;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .login-header { padding: 0 1rem; }
+    .uni-title h2 { font-size: 0.95rem; }
+    .uni-title p { font-size: 0.75rem; }
+    .login-card { padding: 1.5rem; margin: 0 1rem; }
+}

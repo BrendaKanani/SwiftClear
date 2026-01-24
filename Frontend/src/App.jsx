@@ -1,25 +1,40 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Login from './Student-Login.jsx';
-import RequestClearance from './RequestClearance.jsx';
-import ClearanceProcess from './ClearanceProcess.jsx';
-import DepartmentDashboard from './DepartmentDashboard.jsx';
-import StaffLogin from './StaffLogin.jsx';
-import AdminDashboard from './AdminDashboard.jsx';
-import HomePage from './HomePage.jsx';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Auth Pages
+import StudentLogin from './pages/auth/StudentLogin.jsx'; 
+import StaffLogin from './pages/auth/StaffLogin.jsx';
+
+// Student Pages 
+import StudentClearance from './pages/student/StudentClearance.jsx';
+
+// Staff Pages
+import DepartmentDashboard from './pages/staff/DepartmentDashboard.jsx';
+import AdminDashboard from './pages/staff/AdminDashboard.jsx';
+
+// Home
+import HomePage from './pages/home/HomePage.jsx';
 
 function App() {
     return (
         <BrowserRouter>
             <Routes>
-                
-                <Route path='' element={<HomePage />} />
-                <Route path="/student-login" element={<Login />} />
-                <Route path="/clearance" element={<RequestClearance />} />
-                <Route path="/clearance-process" element={<ClearanceProcess />} />
-                <Route path="/department/:deptName" element={<DepartmentDashboard />} />
+                {/* Public Home */}
+                <Route path="/" element={<HomePage />} />
+
+                {/* Authentication */}
+                <Route path="/student-login" element={<StudentLogin />} />
                 <Route path="/staff-login" element={<StaffLogin />} />
+
+                {/* Student Workflow */}
+                <Route path="/clearance" element={<StudentClearance />} />
+
+                {/* Staff Workflow */}
+                <Route path="/department/:deptName" element={<DepartmentDashboard />} />
                 <Route path="/admin-dashboard" element={<AdminDashboard />} />
+
+                {/* Catch-All: Redirect unknown paths to Home */}
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
     );

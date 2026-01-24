@@ -1,0 +1,499 @@
+/* =========================================
+   1. GLOBAL RESET & VARIABLES
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+    --dekut-green: #006400;
+    --dekut-gold: #FFD700;
+    --bg-light: #f3f4f6;
+    
+    /* Layout Dimensions */
+    --sidebar-width: 260px;
+    --header-height: 80px;
+
+    /* Theme Colors (Light Mode Default) */
+    --bg-main: #f3f4f6;
+    --bg-card: #ffffff;
+    --bg-sidebar: #006400;
+    --text-main: #1f2937;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --input-bg: #ffffff;
+    --hover-bg: #f8fafc;
+    --shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* Dark Mode Overrides */
+.dark-mode {
+    --bg-main: #111827;
+    --bg-card: #1f2937;
+    --bg-sidebar: #064e06;
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --border-color: #374151;
+    --input-bg: #374151;
+    --hover-bg: #374151;
+    --shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Prevent body scroll, handle inside content-container */
+}
+
+/* =========================================
+   2. DASHBOARD LAYOUT
+   ========================================= */
+.dashboard-parent {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.dashboard-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    width: 100%;
+}
+
+.content-container {
+    flex: 1;
+    background-color: var(--bg-main);
+    padding: 2rem;
+    overflow-y: auto; /* Scrollable Area */
+    height: 100%;
+    transition: background-color 0.3s;
+}
+
+.centered-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    padding-bottom: 50px;
+}
+
+/* =========================================
+   3. HEADER
+   ========================================= */
+.header-container {
+    flex: 0 0 var(--header-height);
+    background-color: var(--dekut-green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 20;
+    width: 100%;
+}
+
+.header-left { display: flex; align-items: center; gap: 15px; }
+.logo { height: 50px; width: auto; padding: 2px; }
+.header-left h2 { font-size: 1.2rem; margin: 0; }
+.header-left p { font-size: 0.8rem; color: var(--dekut-gold); font-style: italic; margin: 0; }
+
+.header-right { display: flex; align-items: center; gap: 15px; }
+.user-info { text-align: right; }
+.user-info .name { display: block; font-weight: bold; font-size: 0.9rem; }
+.user-info .role { font-size: 0.8rem; opacity: 0.8; }
+.avatar {
+    width: 40px; height: 40px; background: #3b82f6; color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;
+}
+
+/* =========================================
+   4. SIDEBAR
+   ========================================= */
+.sidebar-container {
+    width: var(--sidebar-width);
+    background-color: var(--bg-sidebar);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100%;
+    overflow-y: auto;
+    transition: background-color 0.3s;
+}
+
+.sidebar-brand {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 10px;
+}
+
+.sidebar-menu {
+    flex: 1;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-menu a {
+    text-decoration: none;
+    color: #d1e7dd;
+    padding: 15px;
+    border-radius: 8px;
+    transition: 0.2s ease;
+    font-size: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-menu a:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--dekut-gold);
+    transform: translateX(5px);
+}
+
+.sidebar-menu a.active {
+    background-color: white;
+    color: var(--dekut-green);
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logout {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.sidebar-logout:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+/* =========================================
+   5. CARDS & SECTIONS
+   ========================================= */
+.upload-card, .status-tracker-card, .cert-ready-card, .profile-card, .help-card, .settings-card {
+    background: var(--bg-card);
+    color: var(--text-main);
+    width: 100%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: background-color 0.3s, color 0.3s;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background: var(--dekut-green);
+    padding: 1.5rem;
+    text-align: center;
+    color: white;
+}
+
+.card-header h3 { margin-bottom: 5px; font-size: 1.3rem; }
+.card-header p { font-size: 0.9rem; opacity: 0.9; }
+
+/* =========================================
+   6. FORMS & INPUTS
+   ========================================= */
+.upload-form {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.contact-row {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.form-column {
+    flex: 1;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.std-input, .std-select {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.std-input:focus, .std-select:focus {
+    border-color: var(--dekut-green);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 100, 0, 0.1);
+}
+
+.std-input.read-only {
+    background-color: var(--hover-bg);
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+/* File Upload Zone */
+.file-drop-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    background: var(--bg-main);
+    position: relative;
+    transition: 0.2s;
+    color: var(--text-muted);
+}
+
+.file-drop-zone:hover {
+    border-color: var(--dekut-green);
+    background: rgba(0, 100, 0, 0.05);
+}
+
+.file-drop-zone.filled {
+    border-color: var(--dekut-green);
+    background: rgba(0, 100, 0, 0.1);
+    color: var(--dekut-green);
+    font-weight: 600;
+}
+
+.file-drop-zone input {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+}
+
+/* Buttons */
+.btn-submit-clearance, .btn-download {
+    background: var(--dekut-green);
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1rem;
+    margin-top: 10px;
+    transition: background 0.3s;
+}
+
+.btn-submit-clearance:hover, .btn-download:hover {
+    background: #144023;
+}
+
+.btn-submit-clearance:disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* =========================================
+   7. STEPPER & STATUS
+   ========================================= */
+.stepper-container {
+    display: flex; align-items: center; width: 100%; max-width: 600px; margin-bottom: 2rem;
+}
+
+.step {
+    display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; position: relative; z-index: 2; color: var(--text-muted);
+}
+
+.step-circle {
+    width: 35px; height: 35px; border-radius: 50%;
+    background: var(--bg-main); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; border: 2px solid var(--border-color);
+}
+
+.step.active .step-circle {
+    background: var(--dekut-green); color: white; border-color: var(--dekut-green);
+}
+
+.step.active span { color: var(--dekut-green); font-weight: bold; }
+
+.line {
+    flex: 2; height: 3px; background: var(--border-color);
+    margin: 0 5px; position: relative; top: -14px; z-index: 1;
+}
+
+.line.filled { background: var(--dekut-green); }
+
+/* Status Lists */
+.status-list { padding: 0.5rem; }
+.status-row {
+    display: flex; justify-content: space-between; padding: 15px;
+    border-bottom: 1px solid var(--border-color); color: var(--text-main);
+}
+
+.status-pill {
+    padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;
+}
+.status-pill.approved { background: #dcfce7; color: #166534; }
+.status-pill.rejected { background: #fee2e2; color: #991b1b; }
+.status-pill.pending { background: #fef9c3; color: #854d0e; }
+
+.refresh-area { text-align: center; padding: 1rem; }
+.btn-refresh {
+    background: transparent; border: 1px solid var(--dekut-green); color: var(--dekut-green);
+    padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s;
+}
+.btn-refresh:hover { background: var(--dekut-green); color: white; }
+
+/* =========================================
+   8. NOTIFICATIONS & TOASTS
+   ========================================= */
+.notif-badge {
+    background: #e11d48; color: white; font-size: 0.75rem;
+    padding: 2px 8px; border-radius: 12px;
+}
+
+.notification-panel {
+    position: fixed; left: 280px; top: 80px; width: 320px;
+    background: var(--bg-card); border-radius: 10px;
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 999;
+    overflow: hidden; border: 1px solid var(--border-color);
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notif-header {
+    background: var(--hover-bg); padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.notif-header h5 { margin: 0; color: var(--text-main); }
+.notif-header button { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted); }
+
+.notif-list { max-height: 300px; overflow-y: auto; }
+.notif-item { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
+.notif-item.success { border-left: 4px solid #22c55e; }
+.notif-item.error { border-left: 4px solid #ef4444; }
+.notif-title { font-weight: bold; font-size: 0.85rem; color: var(--text-main); }
+.notif-msg { font-size: 0.8rem; color: var(--text-muted); }
+.no-notif { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+
+/* Toasts */
+.toast-container {
+    position: fixed; top: 30px; left: 50%; transform: translateX(-50%); z-index: 10000;
+    display: flex; flex-direction: column; gap: 15px; align-items: center; pointer-events: none;
+}
+
+.toast {
+    min-width: 380px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 12px 24px;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-size: 0.95rem; font-weight: 600; color: #1f2937;
+    pointer-events: auto;
+    border: 1px solid rgba(255,255,255,0.5);
+    animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark-mode .toast { background: rgba(31, 41, 55, 0.95); color: #f9fafb; border: 1px solid #374151; }
+.toast.success .toast-icon { background: #dcfce7; color: #166534; }
+.toast.error .toast-icon { background: #fee2e2; color: #991b1b; }
+.toast.info .toast-icon { background: #dbeafe; color: #1e40af; }
+.toast-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+@keyframes slideDownFade {
+    0% { transform: translateY(-150%) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* =========================================
+   9. PROFILE, HELP & SETTINGS
+   ========================================= */
+.profile-header {
+    background: linear-gradient(135deg, var(--dekut-green), #0f3f1e);
+    padding: 2rem; text-align: center; color: white;
+}
+.profile-avatar-large {
+    width: 80px; height: 80px; background: white; color: var(--dekut-green);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: bold; margin: 0 auto 10px auto;
+    border: 4px solid rgba(255,255,255,0.3);
+}
+.profile-details { padding: 2rem; }
+.detail-row {
+    display: flex; justify-content: space-between; padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.detail-label { font-weight: 600; color: var(--text-muted); }
+.detail-value { font-weight: bold; color: var(--text-main); }
+
+/* Settings Toggles */
+.settings-group { padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
+.settings-group h4 { margin-bottom: 1rem; color: var(--text-main); }
+.toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: var(--text-main); }
+
+.toggle-switch {
+    width: 44px; height: 24px; background: var(--border-color);
+    border-radius: 24px; position: relative; cursor: pointer; transition: 0.2s;
+}
+.toggle-switch.on { background: var(--dekut-green); }
+.toggle-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+    background: white; border-radius: 50%; transition: 0.2s;
+}
+.toggle-switch.on::after { left: 22px; }
+
+/* FAQ */
+.faq-item { border-bottom: 1px solid var(--border-color); }
+.faq-question {
+    padding: 1.2rem; cursor: pointer; font-weight: 600; color: var(--text-main);
+    background: none; border: none; width: 100%; text-align: left;
+}
+.faq-question:hover { background: var(--hover-bg); }
+.faq-answer { padding: 0 1.2rem 1.2rem 1.2rem; color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+
+/* Payment Info Box */
+.payment-info {
+    background: rgba(22, 101, 52, 0.1); padding: 10px;
+    border-radius: 6px; text-align: center; color: var(--dekut-green);
+    margin-bottom: 1rem;
+}

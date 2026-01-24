@@ -1,0 +1,84 @@
+# =========================
+# 1. Dependencies
+# =========================
+node_modules/
+.pnp
+.pnp.js
+bower_components/
+
+# =========================
+# 2. Environment & Secrets (CRITICAL)
+# =========================
+# Never commit these! They contain API keys and passwords.
+.env
+.env.local
+.env.*.local
+serviceAccount.json
+*.pem
+key.json
+
+# =========================
+# 3. Build Outputs
+# =========================
+# Ignore production builds so you don't commit generated code.
+dist/
+build/
+out/
+frontend/dist/
+
+# =========================
+# 4. Logs & Diagnostics
+# =========================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+firebase-debug.log*
+firebase-debug.*.log
+
+# =========================
+# 5. Firebase Specifics
+# =========================
+.firebase/
+# Uncomment if you want to keep project aliases private
+# .firebaserc
+firebase-data/
+Backend/firebase-data/
+.dataconnect/
+
+# =========================
+# 6. Testing & Coverage
+# =========================
+coverage/
+.nyc_output/
+lib-cov/
+
+# =========================
+# 7. OS & IDE Files (Keep repo clean)
+# =========================
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Editors (VS Code, JetBrains, etc)
+.vscode/
+.idea/
+*.swp
+
+# =========================
+# 8. Misc
+# =========================
+pids
+*.pid
+*.pid.lock
+*.seed
+*.tgz
+.eslintcache
+.node_repl_history
+.npm
+.yarn-integrity
