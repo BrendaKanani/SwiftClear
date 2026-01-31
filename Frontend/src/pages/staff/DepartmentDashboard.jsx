@@ -21,7 +21,10 @@ function DepartmentDashboard() {
   const [remarks, setRemarks] = useState("");
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0 });
   
-  const [activeTab, setActiveTab] = useState("dashboard"); 
+  const [activeTab, setActiveTab] = useState("dashboard");
+  
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigate = useNavigate();
   const { deptName } = useParams();
@@ -42,10 +45,7 @@ function DepartmentDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 👇 USE API SERVICE (Deployment Ready)
         const data = await apiService.getAllRequests();
-        
-        // Handle array vs object response structure
         const allData = Array.isArray(data) ? data : (data.data || []);
         
         setStudents(allData);
@@ -67,7 +67,6 @@ function DepartmentDashboard() {
 
         setFilteredStudents(visibleStudents);
 
-        // Calculate Stats
         const myPending = visibleStudents.filter(s => getStatus(s) === 'Pending').length;
         const myApproved = visibleStudents.filter(s => getStatus(s) === 'Approved').length;
 
@@ -89,7 +88,6 @@ function DepartmentDashboard() {
   const handleDecision = async (decision) => {
     if (!selectedStudent) return;
     try {
-      // 👇 USE API SERVICE
       await apiService.updateDepartmentStatus(selectedStudent.id, {
         department: deptName,
         status: decision,
@@ -98,7 +96,6 @@ function DepartmentDashboard() {
       });
 
       alert(`Student ${decision} successfully!`);
-      // Optimistic update or reload
       window.location.reload();
       
     } catch (error) { 
@@ -128,7 +125,7 @@ function DepartmentDashboard() {
 
   const currentList = getTabContent();
 
-  // --- RENDERERS ---
+  // RENDERERS 
   const renderTable = (list) => (
       <div className="table-section">
         <div className="section-header"><h3>{getTableTitle()}</h3></div>
@@ -183,9 +180,19 @@ function DepartmentDashboard() {
     <div className="dashboard-parent">
       <div className="header-container">
         <div className="header-left">
+          {/* HAMBURGER BUTTON (Mobile Only) */}
+          <button 
+             className="hamburger-btn" 
+             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+             ☰
+          </button>
+
           <img src={logo} alt="Logo" className="logo" />
-          <div><h2>Dedan Kimathi University</h2>
-          <p>Better Life through Technology</p></div>
+          <div className="uni-info-text">
+            <h2>Dedan Kimathi University</h2>
+            <p>Better Life through Technology</p>
+          </div>
         </div>
         <div className="header-right">
           <div className="user-info"><span className="name">{staffName}</span><span className="role">{deptName} Dept</span></div>
@@ -195,31 +202,34 @@ function DepartmentDashboard() {
 
       <div className="dashboard-body">
         
-        {/* SIDEBAR */}
-        <div className="sidebar-container">
+        {/* SIDEBAR (With Mobile Slide Class) */}
+        <div className={`sidebar-container ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          {/* Close Button for Mobile */}
+          <button className="close-sidebar-btn" onClick={() => setIsMobileMenuOpen(false)}>×</button>
+
           <div className="sidebar-brand"><h4>Staff Portal</h4></div>
           <nav className="sidebar-menu">
             <button 
                 className={`menu-btn ${activeTab === 'dashboard' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => {setActiveTab('dashboard'); setIsMobileMenuOpen(false);}}
             >
                 Dashboard
             </button>
             <button 
                 className={`menu-btn ${activeTab === 'requests' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('requests')}
+                onClick={() => {setActiveTab('requests'); setIsMobileMenuOpen(false);}}
             >
                 Requests {stats.pending > 0 && <span className="badge-yellow">{stats.pending}</span>}
             </button>
             <button 
                 className={`menu-btn ${activeTab === 'history' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('history')}
+                onClick={() => {setActiveTab('history'); setIsMobileMenuOpen(false);}}
             >
                 History
             </button>
             <button 
                 className={`menu-btn ${activeTab === 'profile' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('profile')}
+                onClick={() => {setActiveTab('profile'); setIsMobileMenuOpen(false);}}
             >
                 Profile
             </button>
@@ -228,6 +238,11 @@ function DepartmentDashboard() {
             <button onClick={handleLogout} className="sidebar-logout">Logout</button>
           </div>
         </div>
+
+        {/* OVERLAY for Mobile */}
+        {isMobileMenuOpen && (
+          <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+        )}
 
         <div className="content-container">
           {activeTab !== 'profile' && (
@@ -254,8 +269,6 @@ function DepartmentDashboard() {
                     <p>{selectedStudent.regNo}</p>
                 </div>
                 
-                {/* 🗑️ REMOVED: Document Viewing Section based on your request */}
-
                 <div className="remarks-section">
                     <h5>Remarks</h5>
                     <textarea value={remarks} onChange={e=>setRemarks(e.target.value)} placeholder="Enter reason for rejection or notes..." />

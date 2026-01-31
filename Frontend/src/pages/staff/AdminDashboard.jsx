@@ -4,7 +4,6 @@ import "./AdminDashboard.css";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable"; 
 import logo from "../../assets/DeKUT-Online-Clearance-Portal.png";
-// 👇 IMPORT THE CENTRALIZED API SERVICE
 import { apiService } from "../../services/api"; 
 
 const StatCard = ({ label, value, icon, colorClass, onClick }) => (
@@ -23,6 +22,9 @@ function AdminDashboard() {
   const [stats, setStats] = useState({ total: 0, cleared: 0, pending: 0 });
   const [deptStats, setDeptStats] = useState({}); 
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Modal State
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -47,7 +49,7 @@ function AdminDashboard() {
     fetchSettings(); 
   }, []);
 
-  // --- 1. SETTINGS MANAGEMENT ---
+  // SETTINGS MANAGEMENT 
   const fetchSettings = async () => {
       try {
           const data = await apiService.getSystemSettings();
@@ -64,17 +66,15 @@ function AdminDashboard() {
       } catch (err) {
           console.error(err);
           alert("Failed to save setting.");
-          // Revert on error if needed, or just fetchSettings()
           fetchSettings();
       }
   };
 
-  // --- 2. DASHBOARD DATA (STUDENTS) ---
+  // DASHBOARD DATA (STUDENTS) 
   const fetchDashboardData = async () => {
     try {
       const data = await apiService.getAllRequests();
       
-      // Normalize Data (Handle Firebase structure)
       const cleanData = Array.isArray(data) 
         ? data.map(item => item.data ? { ...item.data, id: item.id } : item)
         : [];
@@ -105,7 +105,7 @@ function AdminDashboard() {
     } catch (err) { console.error("Error fetching requests:", err); }
   };
 
-  // --- 3. SYSTEM USERS (STAFF) ---
+  // SYSTEM USERS (STAFF) 
   useEffect(() => {
       if (activeTab === "users") fetchSystemUsers();
   }, [activeTab]);
@@ -119,7 +119,7 @@ function AdminDashboard() {
       finally { setUsersLoading(false); }
   };
 
-  // --- 4. SEARCH FILTER ---
+  // SEARCH FILTER 
   useEffect(() => {
     const lowerTerm = searchTerm.toLowerCase();
     const filtered = requests.filter(r => 
@@ -131,7 +131,7 @@ function AdminDashboard() {
 
   const handleLogout = () => { sessionStorage.clear(); navigate("/"); };
 
-  // --- 5. APPROVAL ACTIONS ---
+  // APPROVAL ACTIONS
   const handleDecision = async (decision) => {
     if (!selectedStudent) return;
     try {
@@ -157,7 +157,7 @@ function AdminDashboard() {
     return <span className="icon-status pending" title="Pending">−</span>;
   };
 
-  // --- RENDERERS ---
+  // RENDERERS 
 
   const renderUsers = () => (
       <div className="table-section">
@@ -239,9 +239,19 @@ function AdminDashboard() {
     <div className="dashboard-parent">
       <div className="header-container">
         <div className="header-left">
+          {/* HAMBURGER BUTTON (Mobile Only) */}
+          <button 
+             className="hamburger-btn" 
+             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+             ☰
+          </button>
+
           <img src={logo} alt="Logo" className="logo" />
-          <div><h2>Dedan Kimathi University</h2>
-          <p>Better Life through Technology</p></div>
+          <div className="uni-info-text">
+            <h2>Dedan Kimathi University</h2>
+            <p>Better Life through Technology</p>
+          </div>
         </div>
         <div className="header-right">
           <div className="user-info"><span className="name">{adminName}</span><span className="role">System Administrator</span></div>
@@ -250,18 +260,28 @@ function AdminDashboard() {
       </div>
 
       <div className="dashboard-body">
-        <div className="sidebar-container">
+        
+        {/* SIDEBAR */}
+        <div className={`sidebar-container ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+          {/* Close Button for Mobile */}
+          <button className="close-sidebar-btn" onClick={() => setIsMobileMenuOpen(false)}>×</button>
+
           <div className="sidebar-brand"><h4>Admin Portal</h4></div>
           <nav className="sidebar-menu">
-            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("dashboard")}} className={activeTab==="dashboard"?"active":""}>Dashboard</a>
-            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("users")}} className={activeTab==="users"?"active":""}>System Users</a>
-            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("reports")}} className={activeTab==="reports"?"active":""}>Reports</a>
-            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("settings")}} className={activeTab==="settings"?"active":""}>Settings</a>
+            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("dashboard"); setIsMobileMenuOpen(false);}} className={activeTab==="dashboard"?"active":""}>Dashboard</a>
+            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("users"); setIsMobileMenuOpen(false);}} className={activeTab==="users"?"active":""}>System Users</a>
+            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("reports"); setIsMobileMenuOpen(false);}} className={activeTab==="reports"?"active":""}>Reports</a>
+            <a href="#" onClick={(e)=>{e.preventDefault(); setActiveTab("settings"); setIsMobileMenuOpen(false);}} className={activeTab==="settings"?"active":""}>Settings</a>
           </nav>
           <div className="sidebar-footer">
             <button onClick={handleLogout} className="sidebar-logout">Logout</button>
           </div>
         </div>
+
+        {/* OVERLAY for Mobile */}
+        {isMobileMenuOpen && (
+          <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
+        )}
 
         <div className="content-container">
           {activeTab === "dashboard" && (

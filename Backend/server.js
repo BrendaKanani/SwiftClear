@@ -6,10 +6,8 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 
-// ==========================================
-// 1. CONFIGURATION & CREDENTIALS
-// ==========================================
-const serviceAccount = require("./serviceAccount.json");
+// CONFIGURATION & CREDENTIALS 
+const serviceAccount = require("../serviceAccount.json");
 
 // Initialize Firebase
 admin.initializeApp({
@@ -22,9 +20,7 @@ const storage = admin.storage().bucket();
 
 const app = express();
 
-// ==========================================
-// 2. MIDDLEWARE
-// ==========================================
+// MIDDLEWARE
 app.use(helmet());
 app.use(cors()); // Allow all origins (Dev mode)
 app.use(express.json({ limit: '10mb' }));
@@ -35,9 +31,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// ==========================================
 // 3. EMAIL NOTIFICATION SYSTEM
-// ==========================================
 const mailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -75,9 +69,7 @@ const notifyStudent = async (studentId, subject, message) => {
   }
 };
 
-// ==========================================
-// 4. AUTH ROUTES (Staff & Student)
-// ==========================================
+// AUTH ROUTES (Staff & Student)
 
 // STAFF LOGIN
 app.post('/api/auth/staff-login', async (req, res) => {
@@ -159,9 +151,7 @@ app.post('/api/auth/student-login', async (req, res) => {
   }
 });
 
-// ==========================================
 // 5. FEATURE ROUTES
-// ==========================================
 
 // Core Features
 app.use('/api/requests', require('./routes/requests')(db, notifyStudent));
@@ -171,9 +161,7 @@ app.use('/api/mpesa', require('./routes/mpesa')(db));
 // File Uploads (Using Signed URLs approach)
 app.use('/api/upload', require('./routes/upload')(storage));
 
-// ==========================================
-// 6. SYSTEM & SETTINGS ROUTES
-// ==========================================
+// SYSTEM & SETTINGS ROUTES
 
 // GET Settings
 app.get('/api/settings', async (req, res) => {
@@ -217,8 +205,6 @@ app.post('/api/test-notif', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ==========================================
 // 7. START SERVER
-// ==========================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));

@@ -22,7 +22,7 @@ function StudentLogin() {
         try {
             const authData = await apiService.loginStudent({ regNo, password });
             
-            // --- SAVE SESSION DATA ---
+            // SAVE SESSION DATA 
             sessionStorage.setItem("studentName", authData.studentName); 
             sessionStorage.setItem("regNo", authData.regNo);
             sessionStorage.setItem("studentDept", authData.studentDept);
@@ -31,7 +31,7 @@ function StudentLogin() {
                 sessionStorage.setItem("studentEmail", authData.email);
             }
 
-            // Optional: Parse Cohort Year
+            // Parse Cohort Year
             try {
                 const parsedInfo = parseRegNo(authData.regNo);
                 if (parsedInfo && parsedInfo.year) {
@@ -39,7 +39,7 @@ function StudentLogin() {
                 }
             } catch (e) { console.log("Parsing error ignored"); }
 
-            // --- CHECK EXISTING REQUESTS ---
+            // CHECK EXISTING REQUESTS
            try {
                 const allRequests = await apiService.getAllRequests();
                 const requestsArray = Array.isArray(allRequests) ? allRequests : (allRequests.data || []);
@@ -54,7 +54,7 @@ function StudentLogin() {
                 console.warn("Could not check existing requests, default flow active.");
             }
 
-            // --- REDIRECT ---
+            // REDIRECT
             navigate("/clearance"); 
 
         } catch (err) {

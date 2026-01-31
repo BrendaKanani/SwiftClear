@@ -33,7 +33,9 @@
 html, body {
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    /* Ensure scrolling works on mobile */
+    overflow-y: auto !important; 
+    overflow-x: hidden;
 }
 
 /* =========================================
@@ -51,8 +53,9 @@ html, body {
 .dashboard-body {
     display: flex;
     flex: 1;
-    overflow: hidden;
+    overflow: hidden; /* Desktop: Sidebar handles scroll */
     width: 100%;
+    position: relative;
 }
 
 .content-container {
@@ -80,8 +83,8 @@ html, body {
 
 .header-left { display: flex; align-items: center; gap: 15px; }
 .logo { height: 50px; width: auto; }
-.header-left h2 { font-size: 1.2rem; margin: 0; }
-.header-left p { font-size: 0.8rem; color: var(--dekut-gold); font-style: italic; margin: 0; }
+.uni-info-text h2 { font-size: 1.2rem; margin: 0; }
+.uni-info-text p { font-size: 0.8rem; color: var(--dekut-gold); font-style: italic; margin: 0; }
 
 .header-right { display: flex; align-items: center; gap: 1rem; }
 .user-info { text-align: right; }
@@ -104,11 +107,14 @@ html, body {
     flex-direction: column;
     flex-shrink: 0;
     height: 100%;
+    /* Transition for slide-in effect */
+    transition: transform 0.3s ease-in-out;
 }
 
-.sidebar-brand {
+.sidebar-brand h4{
     padding: 1.5rem;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: var(--dekut-gold);
     font-size: 1.1rem;
     font-weight: bold;
 }
@@ -128,8 +134,17 @@ html, body {
     display: flex; justify-content: space-between; align-items: center;
 }
 
-.menu-btn:hover { background-color: rgba(255, 255, 255, 0.15); color: var(--dekut-gold); }
-.menu-btn.active { background-color: #fff; color: var(--dekut-green); font-weight: bold; }
+.menu-btn:hover { 
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--dekut-gold);
+    transform: translateX(5px);
+}
+.menu-btn.active { 
+    background-color: white;
+    color: var(--dekut-green);
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
 
 .badge-yellow {
     background-color: var(--dekut-gold); color: #000;
@@ -166,18 +181,31 @@ html, body {
 .card-yellow { border-left-color: var(--dekut-gold); }
 .card-green { border-left-color: var(--dekut-green); }
 
-/* Table Styles */
+/* --- TABLE FIXES --- */
 .table-section {
-    background: var(--bg-card); border-radius: 12px; padding: 1.5rem;
-    box-shadow: var(--shadow-light); overflow: hidden;
+    background: var(--bg-card); 
+    border-radius: 12px; 
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light); 
+    /* Enable Horizontal Scroll */
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+    margin-bottom: 20px;
 }
 
 .section-header h3 { font-size: 1.2rem; color: var(--text-main); margin-bottom: 1rem; }
 
-.modern-table { width: 100%; border-collapse: collapse; }
+.modern-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    /* Force width to prevent squashing */
+    min-width: 800px; 
+}
+
 .modern-table th {
     text-align: left; padding: 15px; background: var(--bg-main);
     color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
 }
 .modern-table td { padding: 15px; border-bottom: 1px solid var(--bg-main); color: var(--text-main); }
 
@@ -288,3 +316,93 @@ html, body {
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* =========================================
+   8. MOBILE RESPONSIVENESS (HAMBURGER + LAYOUT)
+   ========================================= */
+
+/* Default State: Hidden on Desktop */
+.hamburger-btn, .close-sidebar-btn, .sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    /* --- Layout Adjustments --- */
+    .dashboard-body {
+        overflow-y: auto; /* Let body scroll */
+    }
+
+    .content-container {
+        width: 100%;
+        padding: 1rem; /* Less padding */
+    }
+
+    /* --- Header Changes --- */
+    .header-container {
+        padding: 0 1rem;
+        gap: 10px;
+    }
+
+    .uni-info-text h2 { font-size: 0.9rem; }
+    .uni-info-text p { display: none; } /* Hide slogan on tiny screens */
+
+    /* --- Hamburger Button --- */
+    .hamburger-btn {
+        display: block;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.8rem;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    /* --- Sidebar: Slide-In Drawer --- */
+    .sidebar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 260px;
+        z-index: 1001; /* Above header */
+        transform: translateX(-100%); /* Hidden by default */
+        box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    }
+
+    /* Active State (React adds this class) */
+    .sidebar-container.mobile-open {
+        transform: translateX(0);
+    }
+
+    /* Close Button inside Sidebar */
+    .close-sidebar-btn {
+        display: block;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+    }
+
+    /* --- Overlay --- */
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000; /* Behind sidebar, above content */
+        backdrop-filter: blur(2px);
+        animation: fadeIn 0.3s;
+    }
+
+    /* --- Stats Grid Stack --- */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}

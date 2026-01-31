@@ -1,8 +1,4 @@
-/* src/pages/StudentLogin.css */
-
-/* =========================================
-   1. VARIABLES & RESET
-   ========================================= */
+/* VARIABLES & RESET */
 :root {
     --dekut-green: #006400;
     --dekut-gold: #FFD700;
@@ -22,9 +18,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* =========================================
-   2. LAYOUT & BACKGROUND
-   ========================================= */
+/* LAYOUT & BACKGROUND */
 .login-wrapper {
     display: flex;
     justify-content: center;
@@ -32,15 +26,10 @@
     min-height: 100vh;
     width: 100vw;
     background: linear-gradient(135deg, var(--bg-light), #ffffff);
-    
-    /* FIX: Reduced top padding so the card sits more centrally */
     padding-top: var(--header-height); 
-    padding-bottom: 2rem; /* Add bottom breathing room */
+    padding-bottom: 2rem; 
 }
-
-/* =========================================
-   3. HEADER
-   ========================================= */
+/* HEADER */
 .login-header {
     background-color: var(--dekut-green);
     color: var(--white);
@@ -88,26 +77,20 @@
     font-weight: 500;
 }
 
-/* =========================================
-   4. LOGIN CARD (COMPACT VERSION)
-   ========================================= */
+/* LOGIN CARD  */
 .login-card {
     background: var(--white);
-    
-    /* FIX: Tighter padding to make card shorter */
     padding: 2rem; 
-    
     border-radius: 16px;
     box-shadow: var(--shadow-card);
     width: 100%;
-    max-width: 400px; /* Slightly narrower */
+    max-width: 400px; 
     border: 1px solid rgba(0,0,0,0.05);
     animation: slideUp 0.5s ease-out;
 }
 
 .login-card-header {
     text-align: center;
-    /* FIX: Reduced bottom margin */
     margin-bottom: 1.5rem; 
 }
 
@@ -123,11 +106,8 @@
     font-size: 0.9rem;
 }
 
-/* =========================================
-   5. FORMS & INPUTS
-   ========================================= */
+/* FORMS & INPUTS */
 .form-group {
-    /* FIX: Tighter spacing between inputs */
     margin-bottom: 1rem; 
 }
 
@@ -141,7 +121,7 @@
 
 .input-field {
     width: 100%;
-    padding: 10px 14px; /* Slightly smaller padding */
+    padding: 10px 14px; 
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     font-size: 0.95rem;
@@ -193,9 +173,7 @@
     text-decoration: underline;
 }
 
-/* =========================================
-   6. BUTTONS & FEEDBACK
-   ========================================= */
+/* BUTTONS & FEEDBACK */
 .login-btn {
     width: 100%;
     padding: 12px;
@@ -247,9 +225,7 @@
     padding-top: 1rem;
 }
 
-/* =========================================
-   7. ANIMATIONS
-   ========================================= */
+/* ANIMATIONS */
 .loader {
     width: 18px;
     height: 18px;

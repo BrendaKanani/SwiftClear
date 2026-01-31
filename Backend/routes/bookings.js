@@ -7,9 +7,7 @@ module.exports = (db) => {
   // Helper for consistent server timestamps
   const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();
 
-  // ==========================================
   // 1. CREATE BOOKING
-  // ==========================================
   router.post('/', async (req, res, next) => {
     try {
       const { requestId, studentId, gownType, gownSize, amount = 0, currency = 'KES', paymentRef = null } = req.body;
@@ -44,9 +42,7 @@ module.exports = (db) => {
     }
   });
 
-  // ==========================================
   // 2. GET BOOKINGS (List with Filter)
-  // ==========================================
   router.get('/', async (req, res, next) => {
     try {
       let query = db.collection('gownBookings');
@@ -56,9 +52,7 @@ module.exports = (db) => {
         query = query.where('studentId', '==', req.query.studentId);
       }
 
-      // Default Sort: Newest First
-      // NOTE: If using 'where' + 'orderBy', Firestore requires a composite index.
-      // Check your Firebase Console logs for a link to create it if this query fails.
+    
       query = query.orderBy('createdAt', 'desc');
 
       const snapshot = await query.get();
@@ -74,9 +68,7 @@ module.exports = (db) => {
     }
   });
 
-  // ==========================================
   // 3. UPDATE BOOKING (Status / Fines)
-  // ==========================================
   router.patch('/:id', async (req, res, next) => {
     try {
       const { status, fine } = req.body;

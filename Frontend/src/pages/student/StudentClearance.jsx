@@ -7,6 +7,14 @@ import "./StudentClearance.css";
 // IMPORT API SERVICE & DYNAMIC URL
 import { apiService, API_BASE_URL_EXPORT } from "../../services/api";
 
+// Professional Bell Icon Component
+const BellIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+  </svg>
+);
+
 function StudentClearance() {
   const navigate = useNavigate();
 
@@ -22,11 +30,13 @@ function StudentClearance() {
   const [requestId, setRequestId] = useState(sessionStorage.getItem("requestId"));
   const [clearanceData, setClearanceData] = useState(null);
   
-  // Upload State & Contact Info
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Upload & Contact Info
   const [files, setFiles] = useState({ nationalId: null, birthCert: null });
   const [contactInfo, setContactInfo] = useState({ email: sessionEmail }); 
   const [department, setDepartment] = useState(sessionDept);
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Notification State
@@ -39,22 +49,61 @@ function StudentClearance() {
     } catch (e) { return []; }
   });
   
-  // Booking & Payment State
+  // Booking & Payment
   const [gownType, setGownType] = useState("");
   const [gownSize, setGownSize] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
-  // Settings State
+  // Settings
   const [settings, setSettings] = useState(() => {
       const saved = localStorage.getItem("studentSettings");
       return saved ? JSON.parse(saved) : { emailAlerts: true };
   });
 
-  const [theme, setTheme] = useState(() => localStorage.getItem("appTheme") || "light");
+  // --- 3. SMART THEME ENGINE ---
+  const [theme, setTheme] = useState("light");
+  const [isSystemTheme, setIsSystemTheme] = useState(true);
+
+  useEffect(() => {
+      const savedTheme = localStorage.getItem("appTheme");
+      const systemQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      if (savedTheme) {
+          setIsSystemTheme(false);
+          setTheme(savedTheme);
+      } else {
+          setIsSystemTheme(true);
+          setTheme(systemQuery.matches ? "dark" : "light");
+      }
+
+      const handleSysChange = (e) => {
+          if (!localStorage.getItem("appTheme")) {
+              setTheme(e.matches ? "dark" : "light");
+          }
+      };
+
+      systemQuery.addEventListener('change', handleSysChange);
+      return () => systemQuery.removeEventListener('change', handleSysChange);
+  }, []);
+
+  const toggleTheme = () => {
+      const newTheme = theme === "light" ? "dark" : "light";
+      setTheme(newTheme);
+      setIsSystemTheme(false);
+      localStorage.setItem("appTheme", newTheme);
+  };
+
+  const resetToSystemTheme = () => {
+      localStorage.removeItem("appTheme");
+      setIsSystemTheme(true);
+      const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(sysDark ? "dark" : "light");
+  };
+
   const [toast, setToast] = useState(null);
 
-  // --- 3. HELPER FUNCTIONS ---
+  // --- 4. HELPER FUNCTIONS ---
   const triggerToast = (message, type = "info") => {
       setToast({ message, type });
       setTimeout(() => setToast(null), 3000);
@@ -67,7 +116,13 @@ function StudentClearance() {
     return apiResponse;
   };
 
-  // --- 4. SMART RESTORE ---
+  // ✅ FIXED: Defined getStatus explicitly to prevent ReferenceError
+  const getStatus = (dept) => {
+      if (!clearanceData || !clearanceData.clearance) return "Pending";
+      return clearanceData.clearance[dept]?.status || "Pending";
+  };
+
+  // --- 5. DATA FETCHING ---
   useEffect(() => {
     if (!regNo) {
         navigate("/student-login");
@@ -130,7 +185,7 @@ function StudentClearance() {
       } catch (err) { console.error("Polling error", err); }
   };
 
-  // --- 5. NOTIFICATIONS ---
+  // --- 6. NOTIFICATIONS LOGIC ---
   useEffect(() => {
     if (!clearanceData || !clearanceData.id) return;
     const deptList = getDepartmentList();
@@ -183,11 +238,21 @@ function StudentClearance() {
   }, [showNotifPanel, notifications, unreadCount, readNotifIds]);
 
   const handleToggleNotifications = (e) => {
-      e.preventDefault();
+      e.stopPropagation();
       setShowNotifPanel(prev => !prev);
   };
 
-  // --- 6. CORE ACTIONS ---
+  useEffect(() => {
+    const closeMenu = (e) => {
+        if (!e.target.closest('.notification-container')) {
+            setShowNotifPanel(false);
+        }
+    };
+    document.addEventListener('click', closeMenu);
+    return () => document.removeEventListener('click', closeMenu);
+  }, []);
+
+  // --- 7. CORE ACTIONS ---
   const handleFileUpload = async (e) => {
     e.preventDefault();
     if (!files.nationalId || !files.birthCert) return triggerToast("Please upload both documents.", "error");
@@ -202,19 +267,12 @@ function StudentClearance() {
     setIsSubmitting(true);
     try {
         const departments = ['Finance', 'Library', 'SportsWelfare', 'Registrar', department];
-        
-        const payload = { 
-            studentId: regNo, 
-            name: studentName, 
-            regNo, 
-            departments, 
-            email: contactInfo.email
-        };
+        const payload = { studentId: regNo, name: studentName, regNo, departments, email: contactInfo.email };
 
         const resData = await apiService.createClearance(payload);
         
         if (resData.message && resData.message.includes('exists')) {
-            triggerToast("Restored existing request (Delete it to change department)", "info");
+            triggerToast("Restored existing request", "info");
         } else {
             triggerToast(`Clearance started for ${department}!`, "success");
         }
@@ -223,12 +281,12 @@ function StudentClearance() {
         sessionStorage.setItem('requestId', newId);
         setRequestId(newId);
 
+        // ✅ SAFE UPLOAD: Tries to upload, logs error if route missing (404) but doesn't crash app
         if (!resData.message || !resData.message.includes('exists')) {
-            // NOTE: Using dynamic URL for file upload to ensure deployment works
             const uploadOne = async (file, type) => {
                 const fd = new FormData(); fd.append('file', file);
-                // Use API_BASE_URL_EXPORT instead of localhost
-                await fetch(`${API_BASE_URL_EXPORT}/upload/${newId}/${type}`, { method: 'POST', body: fd });
+                const response = await fetch(`${API_BASE_URL_EXPORT}/upload/${newId}/${type}`, { method: 'POST', body: fd });
+                if (!response.ok) throw new Error(`Server responded with ${response.status}`);
             };
             await Promise.all([ uploadOne(files.nationalId, 'nationalId'), uploadOne(files.birthCert, 'birthCert') ]);
         }
@@ -236,49 +294,44 @@ function StudentClearance() {
         setClearanceData({ id: newId, ...resData.data }); 
         setCurrentStep(2);
 
-    } catch (err) { triggerToast("Upload Failed: " + err.message, "error"); } 
+    } catch (err) { 
+        console.error("Upload/Create Error:", err);
+        // Even if upload fails (e.g. 404), we move to step 2 to prevent getting stuck, 
+        // but warn the user.
+        if (err.message.includes("404")) {
+             triggerToast("Request created, but document upload failed (Server Route Missing).", "error");
+             // Force move to step 2 anyway so they can see status
+             setClearanceData(prev => prev || { overallStatus: 'Pending', clearance: {} }); 
+             setCurrentStep(2);
+        } else {
+             triggerToast("Error: " + err.message, "error");
+        }
+    } 
     finally { setIsSubmitting(false); }
   };
 
   const handlePayment = async () => {
-    if (!gownSize || !gownType || !phoneNumber) {
-        return triggerToast("Please enter Gown details and Phone Number.", "error");
-    }
+    if (!gownSize || !gownType || !phoneNumber) return triggerToast("Please enter Gown details and Phone Number.", "error");
     
     setPaymentProcessing(true);
     triggerToast("Sending M-Pesa Request...", "info");
 
     try {
-        // USE THE CENTRALIZED API SERVICE
-        await apiService.initiateMpesaPayment({
-             phoneNumber, 
-             studentId: regNo, 
-             studentName, 
-             gownType, 
-             gownSize, 
-             requestId 
-        });
-
+        await apiService.initiateMpesaPayment({ phoneNumber, studentId: regNo, studentName, gownType, gownSize, requestId });
         triggerToast("Please check your phone for the PIN!", "success");
         
-        // Wait 8 seconds to simulate user typing PIN
         setTimeout(() => {
             sessionStorage.setItem("bookingComplete", "true");
             setCurrentStep(4); 
             generatePDF(); 
             triggerToast("Payment Confirmed!", "success"); 
         }, 8000); 
-
-    } catch(err) { 
-        console.error(err);
-        triggerToast(err.message || "Payment Failed", "error"); 
-    } finally { 
-        setPaymentProcessing(false); 
-    }
+    } catch(err) { triggerToast(err.message || "Payment Failed", "error"); } 
+    finally { setPaymentProcessing(false); }
   };
 
   const generatePDF = async () => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
 
@@ -293,57 +346,121 @@ function StudentClearance() {
     };
 
     try {
-        doc.setLineWidth(1);
-        doc.setDrawColor(0, 100, 0); 
-        doc.rect(10, 10, width - 20, height - 20); 
+        // --- 1. BORDERS & BACKGROUND ---
+        doc.setDrawColor(0, 100, 0); // DeKUT Green
+        doc.setLineWidth(1.5);
+        doc.rect(5, 5, width - 10, height - 10);
         doc.setLineWidth(0.5);
-        doc.rect(12, 12, width - 24, height - 24); 
+        doc.rect(7, 7, width - 14, height - 14);
 
+        // --- 2. OFFICIAL HEADER ---
         const logoUrl = await getImageDataUrl(logo);
-        doc.addImage(logoUrl, "PNG", width / 2 - 15, 20, 30, 30);
+        doc.addImage(logoUrl, "PNG", width / 2 - 15, 15, 30, 30);
         
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(24);
-        doc.setTextColor(0, 100, 0); 
-        doc.text("DEDAN KIMATHI UNIVERSITY OF TECHNOLOGY", width / 2, 60, { align: "center" });
-        
-        doc.setFontSize(14);
-        doc.setTextColor(0, 0, 0);
-        doc.text("P.O. Box 657-10100, Nyeri, Kenya | Tel: +254 713 835965", width / 2, 70, { align: "center" });
-        doc.line(40, 75, width - 40, 75); 
-
-        doc.setFontSize(28);
-        doc.setFont("times", "bold");
-        doc.text("CERTIFICATE OF CLEARANCE", width / 2, 100, { align: "center" });
-
-        doc.setFont("times", "normal");
-        doc.setFontSize(16);
-        doc.text("This is to certify that:", 50, 125);
-
+        let yPos = 50;
         doc.setFont("times", "bold");
         doc.setFontSize(18);
-        doc.text(studentName.toUpperCase(), width / 2, 140, { align: "center" });
-        doc.line(width / 2 - 60, 142, width / 2 + 60, 142); 
-
-        doc.setFont("times", "normal");
-        doc.setFontSize(16);
-        doc.text(`Registration No: ${regNo}`, width / 2, 155, { align: "center" });
-        doc.text(`Department: ${department || sessionDept}`, width / 2, 165, { align: "center" });
-
-        doc.text("Has successfully cleared with all university departments and", width / 2, 185, { align: "center" });
-        doc.text("is hereby eligible for graduation.", width / 2, 195, { align: "center" });
-
+        doc.setTextColor(0, 100, 0); // Official Green Color
+        doc.text("DEDAN KIMATHI UNIVERSITY OF TECHNOLOGY", width / 2, yPos, { align: "center" });
+        
+        yPos += 7;
         doc.setFontSize(12);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Gown Issued: ${gownType} (${gownSize})`, 50, 230);
-        doc.text(`Clearance Ref: ${requestId}`, width - 100, 230, { align: "right" });
+        doc.setTextColor(0, 0, 0); // Black
+        doc.text("OFFICE OF THE REGISTRAR ACADEMIC AFFAIRS & RESEARCH", width / 2, yPos, { align: "center" });
 
+        yPos += 6;
+        doc.setFont("times", "normal");
         doc.setFontSize(10);
-        doc.setTextColor(150, 150, 150);
-        const date = new Date().toLocaleDateString();
-        doc.text(`System Generated: ${date}. Valid without signature.`, width / 2, height - 15, { align: "center" });
+        doc.text("P.O. Box 657-10100, Nyeri, Kenya | Tel: 0713835965 | Email: registraraa@dkut.ac.ke", width / 2, yPos, { align: "center" });
 
-        doc.save(`${regNo.replace(/\//g, '-')}_Certificate.pdf`);
+        yPos += 4;
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.5);
+        doc.line(20, yPos, width - 20, yPos); // Divider Line
+
+        // --- 3. CERTIFICATE TITLE ---
+        yPos += 15;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(0, 100, 0);
+        doc.text("CERTIFICATE OF CLEARANCE", width / 2, yPos, { align: "center" });
+        
+        // --- 4. STUDENT DETAILS ---
+        yPos += 15;
+        doc.setFont("times", "normal");
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        
+        const date = new Date().toLocaleDateString();
+        doc.text(`REF: DeKUT/AA/CLEARANCE/${requestId?.substring(0,6).toUpperCase()}`, 20, yPos);
+        doc.text(`DATE: ${date}`, width - 20, yPos, { align: "right" });
+
+        yPos += 20;
+        doc.setFontSize(14);
+        doc.text("This is to certify that:", width / 2, yPos, { align: "center" });
+
+        yPos += 15;
+        doc.setFont("times", "bold");
+        doc.setFontSize(20);
+        doc.text(studentName.toUpperCase(), width / 2, yPos, { align: "center" });
+        
+        yPos += 2;
+        doc.setLineWidth(0.5);
+        doc.line(width / 2 - 60, yPos + 1, width / 2 + 60, yPos + 1); // Underline
+
+        yPos += 12;
+        doc.setFont("times", "bold");
+        doc.setFontSize(14);
+        doc.text(`REGISTRATION NO: ${regNo}`, width / 2, yPos, { align: "center" });
+
+        yPos += 10;
+        doc.text(`DEPARTMENT: ${department || sessionDept}`, width / 2, yPos, { align: "center" });
+
+        // --- 5. BODY TEXT ---
+        yPos += 20;
+        doc.setFont("times", "normal");
+        doc.setFontSize(13);
+        const bodyText = `Has successfully cleared with all the University Departments as required by the University Senate. The student has returned all University property and has settled all financial obligations.`;
+        const splitText = doc.splitTextToSize(bodyText, 160);
+        doc.text(splitText, width / 2, yPos, { align: "center" });
+
+        yPos += 20;
+        doc.text("The student is therefore eligible for graduation.", width / 2, yPos, { align: "center" });
+
+        // --- 6. SIGN-OFF ---
+        yPos += 35;
+        doc.setFont("times", "normal");
+        doc.setFontSize(12);
+        doc.text("Signed:", 30, yPos);
+        
+        doc.setLineWidth(0.5);
+        doc.line(50, yPos, 100, yPos); // Signature Line
+
+        yPos += 10;
+        doc.setFont("times", "bold");
+        doc.text("Ms. Elizabeth King'ori", 30, yPos);
+        yPos += 5;
+        doc.setFont("times", "italic");
+        doc.text("Ag. Registrar, Academic Affairs & Research", 30, yPos);
+
+        // Stamp
+        doc.setDrawColor(0, 100, 0);
+        doc.setLineWidth(1);
+        doc.circle(width - 50, yPos - 10, 18);
+        doc.setFontSize(10);
+        doc.setTextColor(0, 100, 0);
+        doc.text("OFFICIAL", width - 50, yPos - 12, { align: "center" });
+        doc.text("STAMP", width - 50, yPos - 7, { align: "center" });
+
+        // --- 7. FOOTER (ISO) ---
+        const footerY = height - 15;
+        doc.setFont("times", "italic");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("DeKUT is ISO 9001:2015 Certified", width / 2, footerY, { align: "center" });
+        doc.text("Better Life through Technology", width / 2, footerY + 5, { align: "center" });
+
+        doc.save(`${regNo.replace(/\//g, '-')}_Clearance_Certificate.pdf`);
 
     } catch (e) { 
         console.error("PDF Error:", e);
@@ -351,25 +468,12 @@ function StudentClearance() {
     }
   };
 
-  const getStatus = (dept) => clearanceData?.clearance?.[dept]?.status || "Pending";
   const getDepartmentList = () => {
       if (!clearanceData) return ['Finance', 'Library', 'Registrar'];
       if (clearanceData.departments && clearanceData.departments.length > 0) return clearanceData.departments;
       if (clearanceData.clearance) return Object.keys(clearanceData.clearance);
       return [];
   };
-  
-  const toggleSetting = async (key) => {
-      const newSettings = { ...settings, [key]: !settings[key] };
-      setSettings(newSettings);
-      localStorage.setItem("studentSettings", JSON.stringify(newSettings));
-      if (requestId) {
-          try {
-             await apiService.updateStudentSettings({ studentId: requestId, ...newSettings });
-          } catch(e){}
-      }
-  };
-  const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
   
   const renderProfile = () => (
       <div className="profile-card">
@@ -390,7 +494,30 @@ function StudentClearance() {
   const renderSettings = () => (
       <div className="settings-card">
           <div className="card-header"><h3>Settings</h3><p>Manage your preferences</p></div>
-          <div className="settings-group"><h4>Appearance</h4><div className="toggle-row"><span>Dark Mode</span><div className={`toggle-switch ${theme === "dark" ? "on" : ""}`} onClick={toggleTheme}></div></div></div>
+          
+          {/* THEME SETTINGS */}
+          <div className="settings-group">
+            <h4>Appearance</h4>
+            <div className="toggle-row">
+                <div style={{display:'flex', flexDirection:'column'}}>
+                    <span>Dark Mode</span>
+                    {isSystemTheme && <small style={{fontSize:'0.75rem', color:'var(--dekut-green)'}}>Using Device Settings</small>}
+                </div>
+                <div className={`toggle-switch ${theme === "dark" ? "on" : ""}`} onClick={toggleTheme}></div>
+            </div>
+            
+            {!isSystemTheme && (
+                <div style={{textAlign:'right', marginTop:'-5px'}}>
+                    <button 
+                        onClick={resetToSystemTheme} 
+                        style={{background:'none', border:'none', color:'var(--text-muted)', fontSize:'0.8rem', textDecoration:'underline', cursor:'pointer'}}
+                    >
+                        Reset to Auto
+                    </button>
+                </div>
+            )}
+          </div>
+
           <div className="settings-group">
             <h4>Notifications</h4>
             <div className="toggle-row">
@@ -414,39 +541,70 @@ function StudentClearance() {
       {toast && <div className="toast-container"><div className={`toast ${toast.type}`}><span className="toast-icon">ℹ️</span><span>{toast.message}</span></div></div>}
       
       <div className="header-container">
-        <div className="header-left"><img src={logo} alt="Logo" className="logo" /><div><h2>Dedan Kimathi University</h2><p>Better Life through Technology</p></div></div>
-        <div className="header-right"><div className="user-info"><span className="name">{studentName}</span><span className="role">Student</span></div><div className="avatar">{studentName.charAt(0)}</div></div>
+        <div className="header-left">
+           <button className="hamburger-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>☰</button>
+           <img src={logo} alt="Logo" className="logo" />
+           <div className="university-info">
+             <h2>Dedan Kimathi University</h2>
+             <p>Better Life through Technology</p>
+           </div>
+        </div>
+        
+        <div className="header-right">
+            <div className="notification-container">
+                <button className="notif-btn" onClick={handleToggleNotifications}>
+                    <BellIcon />
+                    {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+                </button>
+
+                {showNotifPanel && (
+                    <div className="notification-panel">
+                        <div className="notif-header">
+                            <h5>Notifications</h5>
+                            <span className="notif-count">{unreadCount} New</span>
+                        </div>
+                        <div className="notif-list">
+                            {notifications.length === 0 ? (
+                                <div className="no-notif"><span style={{fontSize:'2rem'}}>😴</span><p>No new notifications.</p></div>
+                            ) : (
+                                notifications.map(notif => (
+                                    <div key={notif.id} className={`notif-item ${notif.type}`}>
+                                        <div className="notif-icon">{notif.type === 'success' ? '✅' : '⚠️'}</div>
+                                        <div className="notif-content">
+                                            <div className="notif-title">{notif.title}</div>
+                                            <div className="notif-msg">{notif.msg}</div>
+                                            <div className="notif-time">{notif.time}</div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="user-info">
+                <span className="name">{studentName}</span>
+                <span className="role">Student</span>
+            </div>
+            <div className="avatar">{studentName.charAt(0)}</div>
+        </div>
       </div>
 
       <div className="dashboard-body">
-        <div className="sidebar-container">
+        <div className={`sidebar-container ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+           <button className="close-sidebar-btn" onClick={() => setIsMobileMenuOpen(false)}>×</button>
           <div className="sidebar-brand"><h4>Clearance Portal</h4></div>
           <nav className="sidebar-menu">
-            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("clearance")}} className={activeTab === "clearance" ? "active" : ""}>My Clearance</a>
-            <a href="#" onClick={handleToggleNotifications} className={showNotifPanel ? "active" : ""}>
-                Notifications 
-                {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-            </a>
-            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("profile")}} className={activeTab === "profile" ? "active" : ""}>Profile</a>
-            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("help")}} className={activeTab === "help" ? "active" : ""}>Help</a>
-            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("settings")}} className={activeTab === "settings" ? "active" : ""}>Settings</a>
+            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("clearance"); setIsMobileMenuOpen(false);}} className={activeTab === "clearance" ? "active" : ""}>My Clearance</a>
+            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("profile"); setIsMobileMenuOpen(false);}} className={activeTab === "profile" ? "active" : ""}>Profile</a>
+            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("help"); setIsMobileMenuOpen(false);}} className={activeTab === "help" ? "active" : ""}>Help</a>
+            <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("settings"); setIsMobileMenuOpen(false);}} className={activeTab === "settings" ? "active" : ""}>Settings</a>
           </nav>
           <div className="sidebar-footer"><button onClick={()=> {sessionStorage.clear(); navigate("/");}} className="sidebar-logout">Logout</button></div>
         </div>
         
-        {showNotifPanel && (
-            <div className="notification-panel">
-                <div className="notif-header"><h5>Notifications</h5><button onClick={() => setShowNotifPanel(false)}>x</button></div>
-                <div className="notif-list">
-                    {notifications.length === 0 ? <p className="no-notif">No new notifications.</p> : notifications.map(notif => (
-                        <div key={notif.id} className={`notif-item ${notif.type}`}>
-                            <div className="notif-title">{notif.title}</div>
-                            <div className="notif-msg">{notif.msg}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
+        {isMobileMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
 
         <div className="content-container">
             <div className="centered-content">
@@ -469,21 +627,11 @@ function StudentClearance() {
                                     <div className="contact-row">
                                         <div className="form-column">
                                             <label className="input-label">Email Address</label>
-                                            <input 
-                                                type="email" 
-                                                className="std-input read-only" 
-                                                placeholder="student@dkut.ac.ke" 
-                                                value={contactInfo.email} 
-                                                readOnly
-                                            />
+                                            <input type="email" className="std-input read-only" placeholder="student@dkut.ac.ke" value={contactInfo.email} readOnly />
                                         </div>
                                         <div className="form-column">
                                             <label className="input-label">My Department</label>
-                                            <select 
-                                                className="std-select" 
-                                                value={department} 
-                                                onChange={e => setDepartment(e.target.value)}
-                                            >
+                                            <select className="std-select" value={department} onChange={e => setDepartment(e.target.value)}>
                                                 <option value="Computer Science">Computer Science</option>
                                                 <option value="Nursing">Nursing</option>
                                                 <option value="Engineering">Engineering</option>
@@ -491,7 +639,6 @@ function StudentClearance() {
                                             </select>
                                         </div>
                                     </div>
-                                    
                                     <div className="upload-group">
                                         <label>National ID</label>
                                         <div className={`file-drop-zone ${files.nationalId ? 'filled':''}`}>
@@ -546,13 +693,7 @@ function StudentClearance() {
                                     </div>
                                     <div className="upload-group">
                                         <label className="input-label">M-Pesa Number</label>
-                                        <input 
-                                            type="text" 
-                                            className="std-input"
-                                            placeholder="e.g. 0712345678"
-                                            value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
-                                        />
+                                        <input type="text" className="std-input" placeholder="e.g. 0712345678" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
                                     </div>
                                     <div className="payment-info"><p>Fee: <strong>KES 2,000</strong></p></div>
                                     <button onClick={handlePayment} disabled={paymentProcessing} className="btn-submit-clearance">{paymentProcessing ? "Processing..." : "Pay & Finish"}</button>

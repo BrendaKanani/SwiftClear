@@ -7,9 +7,7 @@ module.exports = (db, notifyStudent) => {
   // Helper for consistent server timestamps
   const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();
 
-  // ==========================================
   // 1. CREATE or RESTORE REQUEST
-  // ==========================================
   router.post('/', async (req, res) => {
     try {
       const { studentId, name, regNo, email, phone, files = [], departments } = req.body;
@@ -78,9 +76,7 @@ module.exports = (db, notifyStudent) => {
     }
   });
 
-  // ==========================================
   // 2. GET ALL REQUESTS (For Admin/Staff)
-  // ==========================================
   router.get('/', async (req, res) => {
     try {
       const snapshot = await db.collection('clearanceRequests')
@@ -96,9 +92,7 @@ module.exports = (db, notifyStudent) => {
     }
   });
 
-  // ==========================================
   // 3. GET SINGLE REQUEST
-  // ==========================================
   router.get('/:id', async (req, res) => {
     try {
       const doc = await db.collection('clearanceRequests').doc(req.params.id).get();
@@ -111,9 +105,7 @@ module.exports = (db, notifyStudent) => {
     }
   });
 
-  // ==========================================
   // 4. UPDATE DEPARTMENT STATUS (Approve/Reject)
-  // ==========================================
   router.put('/:id/department', async (req, res) => {
     try {
       const { department, status, remarks = '', staffName = 'Staff' } = req.body;
@@ -185,9 +177,7 @@ module.exports = (db, notifyStudent) => {
     }
   });
 
-  // ==========================================
   // 5. DELETE REQUEST (Admin Only)
-  // ==========================================
   router.delete('/:id', async (req, res) => {
     try {
       await db.collection('clearanceRequests').doc(req.params.id).delete();
