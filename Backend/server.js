@@ -217,5 +217,8 @@ app.post('/api/test-notif', async (req, res) => {
 });
 
 // 7. START SERVER
+app.get('/', (req, res) => {
+    res.status(200).send('<h1>🚀 SwiftClear API is Alive!</h1><p>Ready to serve requests.</p>');
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server listening on port ${PORT}`));
