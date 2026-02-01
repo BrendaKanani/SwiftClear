@@ -7,7 +7,18 @@ const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 
 // CONFIGURATION & CREDENTIALS 
-const serviceAccount = require("../serviceAccount.json");
+const path = require('path');
+
+// Check if we are running on Render (Production) or Local
+const isProduction = process.env.NODE_ENV === 'production';
+
+// On Render, the secret file is placed in the current folder.
+// Locally, it is one folder up.
+const serviceAccountPath = isProduction 
+    ? './serviceAccount.json' 
+    : '../serviceAccount.json';
+
+const serviceAccount = require(serviceAccountPath);
 
 // Initialize Firebase
 admin.initializeApp({
