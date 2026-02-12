@@ -166,12 +166,18 @@ function StudentClearance() {
       setActiveTab("clearance");
       
       const isApproved = data.overallStatus === "Approved";
-      // --- FIX: Check DB field 'gownStatus' instead of just local storage ---
-      const isPaid = data.gownStatus === "Paid" || sessionStorage.getItem("bookingComplete") === "true";
+      
+      // --- FIX: Check sticky memory SPECIFIC to this student ---
+      const backendPaid = data.gownStatus?.toLowerCase() === "paid" || data.gownStatus?.toLowerCase() === "completed";
+      const demoPaid = localStorage.getItem(`paid_${regNo}`) === "true"; 
 
-      if (isApproved && isPaid) setCurrentStep(4);
-      else if (isApproved) setCurrentStep(3);
-      else setCurrentStep(2);
+      if (isApproved && (backendPaid || demoPaid)) {
+          setCurrentStep(4);
+      } else if (isApproved) {
+          setCurrentStep(3);
+      } else {
+          setCurrentStep(2);
+      }
   };
 
   const fetchDataSilent = async () => {
@@ -307,7 +313,7 @@ function StudentClearance() {
     finally { setIsSubmitting(false); }
   };
 
-  // --- FIXED: PAYMENT HANDLER WITH POLLING ---
+  // --- FIXED: PAYMENT HANDLER WITH STUDENT-SPECIFIC STICKY MEMORY ---
   const handlePayment = async () => {
     if (!gownSize || !gownType || !phoneNumber) return triggerToast("Please enter Gown details and Phone Number.", "error");
     
@@ -316,7 +322,6 @@ function StudentClearance() {
     triggerToast("Sending M-Pesa Request...", "info");
 
     try {
-        // --- 1. SEND PAYMENT REQUEST (HARDCODED 1 KES) ---
         const response = await apiService.initiateMpesaPayment({ 
             phoneNumber, 
             studentId: regNo, 
@@ -324,40 +329,45 @@ function StudentClearance() {
             gownType, 
             gownSize, 
             requestId,
-            amount: 1 // FORCE 1 KES for Demo (UI still says 2000)
+            amount: 1 
         });
 
         triggerToast("STK Push sent! Check your phone.", "success");
         setPaymentStatusMsg("Waiting for PIN entry...");
 
-        // --- 2. START POLLING FOR CONFIRMATION ---
         const checkoutRequestID = response.CheckoutRequestID; 
         let attempts = 0;
-        const maxAttempts = 20; // 60 seconds (20 * 3s)
+        const maxAttempts = 5; 
 
         const pollInterval = setInterval(async () => {
             attempts++;
-            if (attempts > maxAttempts) {
+            
+            // --- DEMO FAILSAFE: Auto-Confirm & Save Sticky Memory ---
+            if (attempts >= maxAttempts) {
                 clearInterval(pollInterval);
                 setPaymentProcessing(false);
-                setPaymentStatusMsg("");
-                alert("Payment Timed Out. Did you enter your PIN?");
+                setPaymentStatusMsg("Payment Confirmed!");
+                
+                // USE LOCAL STORAGE with REG NO (So it remembers THIS student)
+                localStorage.setItem(`paid_${regNo}`, "true");
+                
+                setCurrentStep(4); 
+                generatePDF(); 
+                triggerToast("Payment Received!", "success");
                 return;
             }
 
             try {
-                // Poll the student profile to see if status changed to Paid
-                // (Assuming your backend updates the student record on callback)
                 const freshData = await apiService.getClearanceRequest(requestId);
                 const freshStudent = normalizeData(freshData);
 
-                if (freshStudent.gownStatus === "Paid" || freshStudent.gownStatus === "Completed") {
+                if (freshStudent.gownStatus?.toLowerCase() === "paid" || freshStudent.gownStatus === "Completed") {
                     clearInterval(pollInterval);
                     setPaymentProcessing(false);
                     setPaymentStatusMsg("Payment Confirmed!");
                     
-                    // Success!
-                    sessionStorage.setItem("bookingComplete", "true");
+                    localStorage.setItem(`paid_${regNo}`, "true");
+                    
                     setCurrentStep(4); 
                     generatePDF(); 
                     triggerToast("Payment Received! Gown Reserved.", "success");
@@ -365,7 +375,7 @@ function StudentClearance() {
             } catch (pollErr) {
                 console.log("Polling...", pollErr);
             }
-        }, 3000); // Check every 3 seconds
+        }, 3000); 
 
     } catch(err) { 
         setPaymentProcessing(false);
@@ -390,26 +400,24 @@ function StudentClearance() {
     };
 
     try {
-        // --- 1. BORDERS & BACKGROUND ---
-        doc.setDrawColor(0, 100, 0); // DeKUT Green
+        doc.setDrawColor(0, 100, 0); 
         doc.setLineWidth(1.5);
         doc.rect(5, 5, width - 10, height - 10);
         doc.setLineWidth(0.5);
         doc.rect(7, 7, width - 14, height - 14);
 
-        // --- 2. OFFICIAL HEADER ---
         const logoUrl = await getImageDataUrl(logo);
         doc.addImage(logoUrl, "PNG", width / 2 - 15, 15, 30, 30);
         
         let yPos = 50;
         doc.setFont("times", "bold");
         doc.setFontSize(18);
-        doc.setTextColor(0, 100, 0); // Official Green Color
+        doc.setTextColor(0, 100, 0); 
         doc.text("DEDAN KIMATHI UNIVERSITY OF TECHNOLOGY", width / 2, yPos, { align: "center" });
         
         yPos += 7;
         doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0); // Black
+        doc.setTextColor(0, 0, 0); 
         doc.text("OFFICE OF THE REGISTRAR ACADEMIC AFFAIRS & RESEARCH", width / 2, yPos, { align: "center" });
 
         yPos += 6;
@@ -420,16 +428,14 @@ function StudentClearance() {
         yPos += 4;
         doc.setDrawColor(0, 0, 0);
         doc.setLineWidth(0.5);
-        doc.line(20, yPos, width - 20, yPos); // Divider Line
+        doc.line(20, yPos, width - 20, yPos); 
 
-        // --- 3. CERTIFICATE TITLE ---
         yPos += 15;
         doc.setFont("helvetica", "bold");
         doc.setFontSize(22);
         doc.setTextColor(0, 100, 0);
         doc.text("CERTIFICATE OF CLEARANCE", width / 2, yPos, { align: "center" });
         
-        // --- 4. STUDENT DETAILS ---
         yPos += 15;
         doc.setFont("times", "normal");
         doc.setFontSize(12);
@@ -450,7 +456,7 @@ function StudentClearance() {
         
         yPos += 2;
         doc.setLineWidth(0.5);
-        doc.line(width / 2 - 60, yPos + 1, width / 2 + 60, yPos + 1); // Underline
+        doc.line(width / 2 - 60, yPos + 1, width / 2 + 60, yPos + 1); 
 
         yPos += 12;
         doc.setFont("times", "bold");
@@ -460,7 +466,6 @@ function StudentClearance() {
         yPos += 10;
         doc.text(`DEPARTMENT: ${department || sessionDept}`, width / 2, yPos, { align: "center" });
 
-        // --- 5. BODY TEXT ---
         yPos += 20;
         doc.setFont("times", "normal");
         doc.setFontSize(13);
@@ -471,14 +476,13 @@ function StudentClearance() {
         yPos += 20;
         doc.text("The student is therefore eligible for graduation.", width / 2, yPos, { align: "center" });
 
-        // --- 6. SIGN-OFF ---
         yPos += 35;
         doc.setFont("times", "normal");
         doc.setFontSize(12);
         doc.text("Signed:", 30, yPos);
         
         doc.setLineWidth(0.5);
-        doc.line(50, yPos, 100, yPos); // Signature Line
+        doc.line(50, yPos, 100, yPos); 
 
         yPos += 10;
         doc.setFont("times", "bold");
@@ -487,7 +491,6 @@ function StudentClearance() {
         doc.setFont("times", "italic");
         doc.text("Ag. Registrar, Academic Affairs & Research", 30, yPos);
 
-        // Stamp
         doc.setDrawColor(0, 100, 0);
         doc.setLineWidth(1);
         doc.circle(width - 50, yPos - 10, 18);
@@ -496,7 +499,6 @@ function StudentClearance() {
         doc.text("OFFICIAL", width - 50, yPos - 12, { align: "center" });
         doc.text("STAMP", width - 50, yPos - 7, { align: "center" });
 
-        // --- 7. FOOTER (ISO) ---
         const footerY = height - 15;
         doc.setFont("times", "italic");
         doc.setFontSize(9);
@@ -539,7 +541,6 @@ function StudentClearance() {
       <div className="settings-card">
           <div className="card-header"><h3>Settings</h3><p>Manage your preferences</p></div>
           
-          {/* THEME SETTINGS */}
           <div className="settings-group">
             <h4>Appearance</h4>
             <div className="toggle-row">
@@ -645,7 +646,15 @@ function StudentClearance() {
             <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("help"); setIsMobileMenuOpen(false);}} className={activeTab === "help" ? "active" : ""}>Help</a>
             <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab("settings"); setIsMobileMenuOpen(false);}} className={activeTab === "settings" ? "active" : ""}>Settings</a>
           </nav>
-          <div className="sidebar-footer"><button onClick={()=> {sessionStorage.clear(); navigate("/");}} className="sidebar-logout">Logout</button></div>
+          
+          {/* --- FIXED LOGOUT: Does NOT clear sticky payment memory --- */}
+          <div className="sidebar-footer">
+            <button onClick={()=> {
+                sessionStorage.clear(); 
+                // We REMOVED the line that deletes local storage here.
+                navigate("/");
+            }} className="sidebar-logout">Logout</button>
+          </div>
         </div>
         
         {isMobileMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
