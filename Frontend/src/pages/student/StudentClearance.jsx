@@ -54,6 +54,7 @@ function StudentClearance() {
   const [gownSize, setGownSize] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentStatusMsg, setPaymentStatusMsg] = useState("");
 
   // Settings
   const [settings, setSettings] = useState(() => {
@@ -116,7 +117,6 @@ function StudentClearance() {
     return apiResponse;
   };
 
-  // ✅ FIXED: Defined getStatus explicitly to prevent ReferenceError
   const getStatus = (dept) => {
       if (!clearanceData || !clearanceData.clearance) return "Pending";
       return clearanceData.clearance[dept]?.status || "Pending";
@@ -166,9 +166,10 @@ function StudentClearance() {
       setActiveTab("clearance");
       
       const isApproved = data.overallStatus === "Approved";
-      const hasBooking = sessionStorage.getItem("bookingComplete") === "true";
+      // --- FIX: Check DB field 'gownStatus' instead of just local storage ---
+      const isPaid = data.gownStatus === "Paid" || sessionStorage.getItem("bookingComplete") === "true";
 
-      if (isApproved && hasBooking) setCurrentStep(4);
+      if (isApproved && isPaid) setCurrentStep(4);
       else if (isApproved) setCurrentStep(3);
       else setCurrentStep(2);
   };
@@ -281,7 +282,6 @@ function StudentClearance() {
         sessionStorage.setItem('requestId', newId);
         setRequestId(newId);
 
-        // ✅ SAFE UPLOAD: Tries to upload, logs error if route missing (404) but doesn't crash app
         if (!resData.message || !resData.message.includes('exists')) {
             const uploadOne = async (file, type) => {
                 const fd = new FormData(); fd.append('file', file);
@@ -296,11 +296,8 @@ function StudentClearance() {
 
     } catch (err) { 
         console.error("Upload/Create Error:", err);
-        // Even if upload fails (e.g. 404), we move to step 2 to prevent getting stuck, 
-        // but warn the user.
         if (err.message.includes("404")) {
              triggerToast("Request created, but document upload failed (Server Route Missing).", "error");
-             // Force move to step 2 anyway so they can see status
              setClearanceData(prev => prev || { overallStatus: 'Pending', clearance: {} }); 
              setCurrentStep(2);
         } else {
@@ -310,24 +307,71 @@ function StudentClearance() {
     finally { setIsSubmitting(false); }
   };
 
+  // --- FIXED: PAYMENT HANDLER WITH POLLING ---
   const handlePayment = async () => {
     if (!gownSize || !gownType || !phoneNumber) return triggerToast("Please enter Gown details and Phone Number.", "error");
     
     setPaymentProcessing(true);
+    setPaymentStatusMsg("Initializing M-Pesa...");
     triggerToast("Sending M-Pesa Request...", "info");
 
     try {
-        await apiService.initiateMpesaPayment({ phoneNumber, studentId: regNo, studentName, gownType, gownSize, requestId });
-        triggerToast("Please check your phone for the PIN!", "success");
-        
-        setTimeout(() => {
-            sessionStorage.setItem("bookingComplete", "true");
-            setCurrentStep(4); 
-            generatePDF(); 
-            triggerToast("Payment Confirmed!", "success"); 
-        }, 8000); 
-    } catch(err) { triggerToast(err.message || "Payment Failed", "error"); } 
-    finally { setPaymentProcessing(false); }
+        // --- 1. SEND PAYMENT REQUEST (HARDCODED 1 KES) ---
+        const response = await apiService.initiateMpesaPayment({ 
+            phoneNumber, 
+            studentId: regNo, 
+            studentName, 
+            gownType, 
+            gownSize, 
+            requestId,
+            amount: 1 // FORCE 1 KES for Demo (UI still says 2000)
+        });
+
+        triggerToast("STK Push sent! Check your phone.", "success");
+        setPaymentStatusMsg("Waiting for PIN entry...");
+
+        // --- 2. START POLLING FOR CONFIRMATION ---
+        const checkoutRequestID = response.CheckoutRequestID; 
+        let attempts = 0;
+        const maxAttempts = 20; // 60 seconds (20 * 3s)
+
+        const pollInterval = setInterval(async () => {
+            attempts++;
+            if (attempts > maxAttempts) {
+                clearInterval(pollInterval);
+                setPaymentProcessing(false);
+                setPaymentStatusMsg("");
+                alert("Payment Timed Out. Did you enter your PIN?");
+                return;
+            }
+
+            try {
+                // Poll the student profile to see if status changed to Paid
+                // (Assuming your backend updates the student record on callback)
+                const freshData = await apiService.getClearanceRequest(requestId);
+                const freshStudent = normalizeData(freshData);
+
+                if (freshStudent.gownStatus === "Paid" || freshStudent.gownStatus === "Completed") {
+                    clearInterval(pollInterval);
+                    setPaymentProcessing(false);
+                    setPaymentStatusMsg("Payment Confirmed!");
+                    
+                    // Success!
+                    sessionStorage.setItem("bookingComplete", "true");
+                    setCurrentStep(4); 
+                    generatePDF(); 
+                    triggerToast("Payment Received! Gown Reserved.", "success");
+                }
+            } catch (pollErr) {
+                console.log("Polling...", pollErr);
+            }
+        }, 3000); // Check every 3 seconds
+
+    } catch(err) { 
+        setPaymentProcessing(false);
+        setPaymentStatusMsg("");
+        triggerToast(err.message || "Payment Failed", "error"); 
+    } 
   };
 
   const generatePDF = async () => {
@@ -696,7 +740,18 @@ function StudentClearance() {
                                         <input type="text" className="std-input" placeholder="e.g. 0712345678" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
                                     </div>
                                     <div className="payment-info"><p>Fee: <strong>KES 2,000</strong></p></div>
-                                    <button onClick={handlePayment} disabled={paymentProcessing} className="btn-submit-clearance">{paymentProcessing ? "Processing..." : "Pay & Finish"}</button>
+                                    
+                                    {/* STATUS MESSAGE FOR POLLING */}
+                                    {paymentProcessing && (
+                                        <div style={{textAlign:'center', marginBottom:'10px', color:'var(--dekut-green)'}}>
+                                            <p>{paymentStatusMsg}</p>
+                                            <div className="loader" style={{margin:'0 auto'}}></div>
+                                        </div>
+                                    )}
+
+                                    <button onClick={handlePayment} disabled={paymentProcessing} className="btn-submit-clearance">
+                                        {paymentProcessing ? "Processing..." : "Pay & Finish"}
+                                    </button>
                                 </div>
                             </div>
                         )}

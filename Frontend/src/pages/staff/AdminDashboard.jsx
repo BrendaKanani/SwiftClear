@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css"; 
 import { jsPDF } from "jspdf";
-import "jspdf-autotable"; 
+import autoTable from "jspdf-autotable"; 
 import logo from "../../assets/DeKUT-Online-Clearance-Portal.png";
 import { apiService } from "../../services/api"; 
+import { CSVLink } from "react-csv";
 
 const StatCard = ({ label, value, icon, colorClass, onClick }) => (
   <div className={`stat-card ${colorClass} ${onClick ? 'clickable' : ''}`} onClick={onClick}>
@@ -15,6 +16,7 @@ const StatCard = ({ label, value, icon, colorClass, onClick }) => (
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  
   // State Variables
   const [activeTab, setActiveTab] = useState("dashboard");
   const [requests, setRequests] = useState([]);
@@ -157,6 +159,77 @@ function AdminDashboard() {
     return <span className="icon-status pending" title="Pending">−</span>;
   };
 
+ // NEW: PDF GENERATOR FUNCTION 
+  const generatePDF = () => {
+    try {
+      const doc = new jsPDF();
+
+      // 1. Add Header
+      doc.setFontSize(16);
+      doc.text("Dedan Kimathi University of Technology", 14, 20);
+      
+      doc.setFontSize(12);
+      doc.text("Office of the Registrar (Academic)", 14, 28);
+      doc.text("Official Senate Graduation List", 14, 34);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 42);
+
+      // 2. Define Table Data
+      const tableColumn = ["Reg No", "Full Name", "Department", "Status"];
+      const tableRows = [];
+
+      // Filter only CLEARED students
+      const clearedStudents = requests.filter(req => req.overallStatus === "Approved" || req.clearanceStatus === "Cleared");
+
+      if (clearedStudents.length === 0) {
+        alert("No cleared students found to generate a report!");
+        return;
+      }
+
+      clearedStudents.forEach(student => {
+        const studentData = [
+          student.regNo,
+          student.name,
+          student.department,
+          "CLEARED"
+        ];
+        tableRows.push(studentData);
+      });
+
+      // 3. Generate Table (Try both methods just in case)
+      if (doc.autoTable) {
+         doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 50,
+         });
+      } else {
+         // Fallback for some versions
+         autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 50,
+         });
+      }
+
+      // 4. Save
+      doc.save("DeKUT_Senate_Graduation_List.pdf");
+      
+    } catch (err) {
+      console.error("PDF Generation Error:", err);
+      alert("Error generating PDF. Check console for details.");
+    }
+  };
+  // DATA FOR CSV 
+  const reportData = requests
+    .filter(student => student.overallStatus === "Approved" || student.clearanceStatus === "Cleared")
+    .map(student => ({
+      "Full Name": student.name,
+      "Registration No": student.regNo,
+      "Department": student.department,
+      "Status": "CLEARED",
+      "Clearance Date": new Date().toLocaleDateString()
+    }));
+
   // RENDERERS 
 
   const renderUsers = () => (
@@ -189,9 +262,65 @@ function AdminDashboard() {
   );
 
   const renderReports = () => (
-      <div className="stats-grid">
-          <StatCard label="Download CSV" value="Export Data" icon="📄" colorClass="card-blue" onClick={() => alert("Downloading CSV...")} />
-          <StatCard label="Generate PDF" value="Summary Report" icon="📊" colorClass="card-green" onClick={() => alert("Generating PDF...")} />
+      <div className="reports-section">
+          <div className="section-header">
+              <h3>Senate Graduation List Reports</h3>
+              <p>Generate official lists for cleared students.</p>
+          </div>
+          
+          <div className="stats-grid">
+              {/* CSV Download Card */}
+              <CSVLink 
+                  data={reportData} 
+                  filename={`Graduation_List_${new Date().getFullYear()}.csv`}
+                  className="stat-card card-blue clickable"
+                  target="_blank"
+                  style={{textDecoration:'none', color:'inherit', display:'flex'}}
+              >
+                  <div className="stat-content">
+                      <h3>Export CSV</h3>
+                      <p>Download Senate List</p>
+                  </div>
+                  <div className="stat-icon">📄</div>
+              </CSVLink>
+
+              {/* PDF Generator Card - NOW REAL! */}
+              <StatCard 
+                  label="Summary Report" 
+                  value="Generate PDF" 
+                  icon="📊" 
+                  colorClass="card-green" 
+                  onClick={generatePDF} 
+              />
+          </div>
+
+          {/* Preview Table for Reports */}
+          <div className="table-section" style={{marginTop: '2rem'}}>
+              <h4>Preview: Cleared Students ({reportData.length})</h4>
+              <table className="modern-table">
+                  <thead>
+                      <tr>
+                          <th>Reg No</th>
+                          <th>Name</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {reportData.length > 0 ? reportData.slice(0, 5).map((row, idx) => (
+                          <tr key={idx}>
+                              <td>{row["Registration No"]}</td>
+                              <td>{row["Full Name"]}</td>
+                              <td><span className="status-badge approved">CLEARED</span></td>
+                              <td>{row["Clearance Date"]}</td>
+                          </tr>
+                      )) : (
+                          <tr><td colSpan="4">No cleared students found yet.</td></tr>
+                      )}
+                  </tbody>
+              </table>
+              {reportData.length > 0 && <small style={{display:'block', marginTop:'10px', color:'#666'}}>Showing first 5 records only.</small>}
+          </div>
       </div>
   );
 
@@ -241,10 +370,10 @@ function AdminDashboard() {
         <div className="header-left">
           {/* HAMBURGER BUTTON (Mobile Only) */}
           <button 
-             className="hamburger-btn" 
-             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="hamburger-btn" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-             ☰
+              ☰
           </button>
 
           <img src={logo} alt="Logo" className="logo" />
