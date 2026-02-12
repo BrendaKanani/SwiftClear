@@ -18,13 +18,13 @@ const BellIcon = () => (
 function StudentClearance() {
   const navigate = useNavigate();
 
-  // --- 1. USER SESSION ---
+  //  1. USER SESSION 
   const studentName = sessionStorage.getItem("studentName") || "Student";
   const regNo = sessionStorage.getItem("regNo");
   const sessionDept = sessionStorage.getItem("studentDept") || "Computer Science";
   const sessionEmail = sessionStorage.getItem("studentEmail") || ""; 
   
-  // --- 2. STATE MANAGEMENT ---
+  // 2. STATE MANAGEMENT 
   const [activeTab, setActiveTab] = useState("loading");
   const [currentStep, setCurrentStep] = useState(0);
   const [requestId, setRequestId] = useState(sessionStorage.getItem("requestId"));
@@ -62,7 +62,7 @@ function StudentClearance() {
       return saved ? JSON.parse(saved) : { emailAlerts: true };
   });
 
-  // --- 3. SMART THEME ENGINE ---
+  // 3. SMART THEME ENGINE 
   const [theme, setTheme] = useState("light");
   const [isSystemTheme, setIsSystemTheme] = useState(true);
 
@@ -104,7 +104,7 @@ function StudentClearance() {
 
   const [toast, setToast] = useState(null);
 
-  // --- 4. HELPER FUNCTIONS ---
+  // 4. HELPER FUNCTIONS 
   const triggerToast = (message, type = "info") => {
       setToast({ message, type });
       setTimeout(() => setToast(null), 3000);
@@ -122,7 +122,7 @@ function StudentClearance() {
       return clearanceData.clearance[dept]?.status || "Pending";
   };
 
-  // --- 5. DATA FETCHING ---
+  // 5. DATA FETCHING 
   useEffect(() => {
     if (!regNo) {
         navigate("/student-login");
@@ -167,7 +167,6 @@ function StudentClearance() {
       
       const isApproved = data.overallStatus === "Approved";
       
-      // --- FIX: Check sticky memory SPECIFIC to this student ---
       const backendPaid = data.gownStatus?.toLowerCase() === "paid" || data.gownStatus?.toLowerCase() === "completed";
       const demoPaid = localStorage.getItem(`paid_${regNo}`) === "true"; 
 
@@ -192,7 +191,7 @@ function StudentClearance() {
       } catch (err) { console.error("Polling error", err); }
   };
 
-  // --- 6. NOTIFICATIONS LOGIC ---
+  // 6. NOTIFICATIONS LOGIC 
   useEffect(() => {
     if (!clearanceData || !clearanceData.id) return;
     const deptList = getDepartmentList();
@@ -259,7 +258,7 @@ function StudentClearance() {
     return () => document.removeEventListener('click', closeMenu);
   }, []);
 
-  // --- 7. CORE ACTIONS ---
+  //  7. CORE ACTIONS 
   const handleFileUpload = async (e) => {
     e.preventDefault();
     if (!files.nationalId || !files.birthCert) return triggerToast("Please upload both documents.", "error");
@@ -353,7 +352,7 @@ function StudentClearance() {
                 
                 setCurrentStep(4); 
                 generatePDF(); 
-                triggerToast("Payment Received!", "success");
+                triggerToast("Payment Received", "success");
                 return;
             }
 
